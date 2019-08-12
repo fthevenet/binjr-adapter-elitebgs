@@ -21,19 +21,35 @@ import eu.binjr.core.data.adapters.TimeSeriesBinding;
 import eu.binjr.core.data.codec.Decoder;
 import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.fx.ui.controls.tree.FilterableTreeItem;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.time.ZoneId;
 
 public class EliteBgsAdapter extends HttpDataAdapter {
+    private static final Logger logger = LogManager.getLogger(EliteBgsAdapter.class);
+
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
+        this(getURL());
     }
+
 
     public EliteBgsAdapter(URL baseAddress) throws CannotInitializeDataAdapterException {
         super(baseAddress);
+    }
+
+    private static URL getURL() throws CannotInitializeDataAdapterException {
+        try {
+            return URI.create("https://elitebgs.app/").toURL();
+        } catch (MalformedURLException e) {
+            logger.debug(e::getMessage, e);
+            throw new CannotInitializeDataAdapterException(e);
+        }
     }
 
     @Override

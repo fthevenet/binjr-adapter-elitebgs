@@ -34,12 +34,12 @@ version '1.0-SNAPSHOT'
 sourceCompatibility = 11
 
 dependencies {
-    compile 'eu.binjr:binjr-core:2.6.3'
-    runtimeOnly "org.openjfx:javafx-base:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
-    runtimeOnly "org.openjfx:javafx-graphics:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
-    runtimeOnly "org.openjfx:javafx-controls:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
-    runtimeOnly "org.openjfx:javafx-fxml:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
-    runtimeOnly "org.openjfx:javafx-swing:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
+    compile 'eu.binjr:binjr-core:2.7.0-SNAPSHOT'
+    compile "org.openjfx:javafx-base:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
+    compile "org.openjfx:javafx-graphics:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
+    compile "org.openjfx:javafx-controls:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
+    compile "org.openjfx:javafx-fxml:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
+    compile "org.openjfx:javafx-swing:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
 }
 
 mainClassName = 'eu.binjr.core.Bootstrap'
@@ -56,9 +56,16 @@ jar {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
+
+run {
+    systemProperties System.getProperties()
+  //  args("-cp  build\\libs\\binjr-adapter-elitebgs-1.0-SNAPSHOT.jar")
+}
+
