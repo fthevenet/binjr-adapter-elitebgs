@@ -122,7 +122,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         try (var p = Profiler.start(() -> "Retrieving all systems starting with " + beginWith + " (" + nbPages.get() + " pages)", logger::trace)) {
             nbPages.addAndGet(addSystemsPage(tree, beginWith, 1));
             for (int page = 2; page < nbPages.get(); page++) {
-                addSystemsPage(tree, beginWith, page);
+                asyncAddSystemsPage(tree, beginWith, page);
             }
         }
     }
@@ -130,30 +130,43 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private int addSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page) throws DataAdapterException {
         try {
             Gson gson = new Gson();
-            AsyncTaskManager.getInstance().submit(() -> gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class),
-                    event -> {
-                        //sourceMaskerPane.setVisible(false);
-                        EBGSSystemsPageV4 t = (EBGSSystemsPageV4) event.getSource().getValue();
-                        Map<String, EBGSSystemsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
-                        for (EBGSSystemsV4 s : m.values()) {
-                            var branch = makeBranch(s.name, s._id, tree.getValue().getTreeHierarchy());
-                            for (var f : s.factions) {
-                                branch.getInternalChildren().add(makeBranch(f.name, f.faction_id, branch.getValue().getTreeHierarchy()));
-                            }
-                            tree.getInternalChildren().add(branch);
-                        }
-
-                    //    return t.pages;
-                    },
-                    event -> {
-                        //   sourceMaskerPane.setVisible(false);
-                        Dialogs.notifyException("An error occurred while parsing the json response to getBindingTree request",
-                                event.getSource().getException());
-                    });
-            return 10;//t.pages;
+            EBGSSystemsPageV4 t = gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class);
+            Map<String, EBGSSystemsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
+            for (EBGSSystemsV4 s : m.values()) {
+                var branch = makeBranch(s.name, s._id, tree.getValue().getTreeHierarchy());
+                for (var f : s.factions) {
+                    branch.getInternalChildren().add(makeBranch(f.name, f.faction_id, branch.getValue().getTreeHierarchy()));
+                }
+                tree.getInternalChildren().add(branch);
+            }
+            return t.pages;
         } catch (JsonSyntaxException e) {
             throw new DataAdapterException("An error occurred while parsing the json response to getBindingTree request", e);
         }
+    }
+
+    private void asyncAddSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page) throws DataAdapterException {
+        Gson gson = new Gson();
+      var ret=  AsyncTaskManager.getInstance().submit(() -> gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class),
+                event -> {
+                    //sourceMaskerPane.setVisible(false);
+                    EBGSSystemsPageV4 t = (EBGSSystemsPageV4) event.getSource().getValue();
+                    Map<String, EBGSSystemsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
+                    for (EBGSSystemsV4 s : m.values()) {
+                        var branch = makeBranch(s.name, s._id, tree.getValue().getTreeHierarchy());
+                        for (var f : s.factions) {
+                            branch.getInternalChildren().add(makeBranch(f.name, f.faction_id, branch.getValue().getTreeHierarchy()));
+                        }
+                        tree.getInternalChildren().add(branch);
+                    }
+
+                    //    return t.pages;
+                },
+                event -> {
+                    //   sourceMaskerPane.setVisible(false);
+                    Dialogs.notifyException("An error occurred while retrieving tree view from source",
+                            event.getSource().getException());
+                });
     }
 
     private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy) {
