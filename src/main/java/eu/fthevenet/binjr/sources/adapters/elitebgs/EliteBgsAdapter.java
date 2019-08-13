@@ -57,8 +57,8 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private static final String SITE = "https://elitebgs.app";
     private static final String API_FACTIONS = "/api/ebgs/v4/factions";
     private static final String API_SYSTEMS = "/api/ebgs/v4/systems";
-    // private static final String FRONTEND_FACTIONS = "/frontend/factions";
-    //   private static final String FRONTEND_SYSTEMS = "/frontend/systems";
+    private static final String FRONTEND_FACTIONS = "/frontend/factions";
+    private static final String FRONTEND_SYSTEMS = "/frontend/systems";
     private static final String TITLE = "Elite BGS";
 
 
@@ -147,7 +147,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     private void asyncAddSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page) throws DataAdapterException {
         Gson gson = new Gson();
-      var ret=  AsyncTaskManager.getInstance().submit(() -> gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class),
+        var ret = AsyncTaskManager.getInstance().submit(() -> gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class),
                 event -> {
                     //sourceMaskerPane.setVisible(false);
                     EBGSSystemsPageV4 t = (EBGSSystemsPageV4) event.getSource().getValue();
@@ -187,7 +187,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         params.add(new BasicNameValuePair("page", Integer.toString(page)));
         params.add(new BasicNameValuePair("beginsWith", beginWith));
 
-        String entityString = doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler());
+        String entityString = doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler());
         logger.trace(entityString);
         return entityString;
     }
