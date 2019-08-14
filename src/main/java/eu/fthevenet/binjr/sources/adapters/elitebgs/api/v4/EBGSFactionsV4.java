@@ -29,4 +29,20 @@ public class EBGSFactionsV4 {
     public boolean is_player_faction;
     public EBGSFactionPresenceV4[] faction_presence;
     public EBGSFactionHistoryV4[] history;
+
+    @Override
+    public String toString() {
+        return "EBGSFactionsV4{" +
+                "_id='" + _id + '\'' +
+                ", __v=" + __v +
+                ", eddb_id=" + eddb_id +
+                ", name='" + name + '\'' +
+                ", name_lower='" + name_lower + '\'' +
+                ", updated_at='" + updated_at + '\'' +
+                ", government='" + government + '\'' +
+                ", allegiance='" + allegiance + '\'' +
+                ", home_system_name='" + home_system_name + '\'' +
+                ", is_player_faction=" + is_player_faction +
+                '}';
+    }
 }

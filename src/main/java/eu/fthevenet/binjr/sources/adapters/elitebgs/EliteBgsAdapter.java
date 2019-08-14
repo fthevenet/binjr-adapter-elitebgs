@@ -17,7 +17,6 @@
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import eu.binjr.common.logging.Profiler;
 import eu.binjr.core.data.adapters.HttpDataAdapter;
 import eu.binjr.core.data.adapters.TimeSeriesBinding;
@@ -49,7 +48,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class EliteBgsAdapter extends HttpDataAdapter {
@@ -82,12 +83,16 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     @Override
     protected URI craftFetchUri(String path, Instant begin, Instant end) throws DataAdapterException {
-        return null;
+        return craftRequestUri(API_FACTIONS,
+                new BasicNameValuePair("id", path),
+                new BasicNameValuePair("timemin", Long.toString(begin.toEpochMilli())),
+                new BasicNameValuePair("timemax", Long.toString(end.toEpochMilli()))
+        );
     }
 
     @Override
     public Decoder getDecoder() {
-        return null;
+        return new EliteBgsDecoder();
     }
 
     @Override
@@ -108,10 +113,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
             var newBranch = makeBranch(letter, letter, tree.getValue().getTreeHierarchy());
             // add a dummy node so that the branch can be expanded
             newBranch.getInternalChildren().add(new FilterableTreeItem<>(null));
-            // add a listener so that bindings for individual datastore are added lazily to avoid
-            // dozens of individual call to "graphdesc" when the tree is built.
             newBranch.expandedProperty().addListener(new SystemExpandListener(letter, letter, newBranch, tree));
-//
             tree.getInternalChildren().add(newBranch);
         }
         return tree;
@@ -119,37 +121,32 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     private void addAllSystemsPages(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith) throws DataAdapterException {
         AtomicInteger nbPages = new AtomicInteger(0);
-        try (var p = Profiler.start(() -> "Retrieving all systems starting with " + beginWith + " (" + nbPages.get() + " pages)", logger::trace)) {
-            nbPages.addAndGet(addSystemsPage(tree, beginWith, 1));
-            for (int page = 2; page < nbPages.get(); page++) {
-                asyncAddSystemsPage(tree, beginWith, page);
-            }
-        }
-    }
-
-    private int addSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page) throws DataAdapterException {
-        try {
-            Gson gson = new Gson();
-            EBGSSystemsPageV4 t = gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class);
-            Map<String, EBGSSystemsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
-            for (EBGSSystemsV4 s : m.values()) {
-                var branch = makeBranch(s.name, s._id, tree.getValue().getTreeHierarchy());
-                for (var f : s.factions) {
-                    branch.getInternalChildren().add(makeBranch(f.name, f.faction_id, branch.getValue().getTreeHierarchy()));
+        AtomicInteger nbHits = new AtomicInteger(0);
+        try (var p = Profiler.start(() -> "Retrieving " + nbHits.get() + " system(s) starting with '" + beginWith + "' (" + nbPages.get() + " pages)", logger::trace)) {
+            EBGSSystemsPageV4 res = addSystemsPage(tree, beginWith, 1, true);
+            if (res != null) {
+                logger.info("pages=" + res.pages);
+                //  var res = addSystemsPage(tree, beginWith, 1);
+                nbPages.addAndGet(res.pages);
+                nbHits.addAndGet(res.total);
+                for (int page = 2; page <= nbPages.get(); page++) {
+                    addSystemsPage(tree, beginWith, page, false);
                 }
-                tree.getInternalChildren().add(branch);
+            }else{
+                logger.warn("No results from synchronous call to addSystemPage");
             }
-            return t.pages;
-        } catch (JsonSyntaxException e) {
-            throw new DataAdapterException("An error occurred while parsing the json response to getBindingTree request", e);
         }
     }
 
-    private void asyncAddSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page) throws DataAdapterException {
+    private EBGSSystemsPageV4 addSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException {
         Gson gson = new Gson();
-        var ret = AsyncTaskManager.getInstance().submit(() -> gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class),
+        AtomicReference<EBGSSystemsPageV4> returnValue = new AtomicReference<>(null);
+        var res = AsyncTaskManager.getInstance().submit(() -> {
+                   var pages = gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class);
+                   returnValue.set(pages);
+                   return pages;
+                },
                 event -> {
-                    //sourceMaskerPane.setVisible(false);
                     EBGSSystemsPageV4 t = (EBGSSystemsPageV4) event.getSource().getValue();
                     Map<String, EBGSSystemsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
                     for (EBGSSystemsV4 s : m.values()) {
@@ -159,14 +156,18 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                         }
                         tree.getInternalChildren().add(branch);
                     }
-
-                    //    return t.pages;
                 },
                 event -> {
-                    //   sourceMaskerPane.setVisible(false);
-                    Dialogs.notifyException("An error occurred while retrieving tree view from source",
-                            event.getSource().getException());
+                    Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException());
                 });
+        if (waitForResult) {
+            try {
+                res.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new DataAdapterException(e);
+            }
+        }
+        return returnValue.get();
     }
 
     private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy) {
@@ -245,7 +246,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                     // remove the listener so it isn't executed next time node is expanded
                     newBranch.expandedProperty().removeListener(this);
                 } catch (Exception e) {
-                    Dialogs.notifyException("Failed to retrieve graph description", e);
+                    Dialogs.notifyException("Failed to retrieve Systems starting with '" + beginWith+"'", e);
                 }
             }
         }
