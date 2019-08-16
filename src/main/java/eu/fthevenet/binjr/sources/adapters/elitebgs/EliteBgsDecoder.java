@@ -52,14 +52,13 @@ public class EliteBgsDecoder implements Decoder {
                 logger.info(f.toString());
                 for (var h : f.history) {
                     if ("juipek".equalsIgnoreCase(h.system)) {
-                        proc.addSample(new XYChart.Data<>(ZonedDateTime.parse(h.updated_at).with(LocalTime.of(0, 0)), h.influence * 100));
+                        proc.addSample(new XYChart.Data<>(ZonedDateTime.parse(h.updated_at), h.influence * 100));
                     }
                 }
                 map.put(seriesNames.get(0), proc);
             }
         }
-
-
+        
         return map;
     }
 }

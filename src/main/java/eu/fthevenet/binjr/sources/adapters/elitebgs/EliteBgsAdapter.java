@@ -97,7 +97,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     @Override
     public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
-        var root = makeBranch(TITLE, TITLE, "\\");
+        var root = makeBranch(TITLE, TITLE, "");
         var systems = getSystems(root);
         var factions = getFactions();
         root.getInternalChildren().addAll(systems, factions);
