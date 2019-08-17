@@ -62,11 +62,9 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private static final String FRONTEND_SYSTEMS = "/frontend/systems";
     private static final String TITLE = "Elite BGS";
 
-
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(getURL());
     }
-
 
     public EliteBgsAdapter(URL baseAddress) throws CannotInitializeDataAdapterException {
         super(baseAddress);

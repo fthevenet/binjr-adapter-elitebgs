@@ -17,16 +17,15 @@
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import eu.binjr.core.data.adapters.BaseDataAdapterInfo;
-import eu.binjr.core.preferences.AppEnvironment;
 
 public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
 
     public EliteBgsAdapterInfo(){
         super("Elite BGS",
                 "Elite BGS Data Adapter",
-                AppEnvironment.COPYRIGHT_NOTICE,
-                AppEnvironment.LICENSE,
-                AppEnvironment.HTTP_WWW_BINJR_EU,
+                "Copyright © 2019 Frederic Thevenet",
+                "Apache-2.0",
+                "https://github.com/fthevenet/binjr-adapter-elitebgs",
                 EliteBgsAdapter.class);
     }
 }
