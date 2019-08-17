@@ -177,7 +177,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                 UnitPrefixes.METRIC,
                 ChartType.LINE,
                 "%",
-                parentHierarchy + "\\" + name,
+                parentHierarchy + "/" + name,
                 this));
     }
 
@@ -194,13 +194,13 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private FilterableTreeItem<TimeSeriesBinding> getFactions() {
         var factionsRoot = new FilterableTreeItem<>(new TimeSeriesBinding(
                 "Factions",
-                "\\Factions\\",
+                "/Factions/",
                 null,
                 "Factions",
                 UnitPrefixes.METRIC,
                 ChartType.LINE,
                 "",
-                "Elite BGS\\Factions\\",
+                "Elite BGS/Factions/",
                 this));
 
         return factionsRoot;

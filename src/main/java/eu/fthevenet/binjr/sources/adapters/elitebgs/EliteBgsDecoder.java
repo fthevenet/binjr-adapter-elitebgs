@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.time.LocalTime;
+import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -39,7 +39,6 @@ import java.util.Map;
 public class EliteBgsDecoder implements Decoder {
     private static final Logger logger = LogManager.getLogger(EliteBgsDecoder.class);
 
-    //   final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(getTimeZoneId());
     @Override
     public Map<TimeSeriesInfo, TimeSeriesProcessor> decode(InputStream in, List<TimeSeriesInfo> seriesNames) throws IOException, DecodingDataFromAdapterException {
         Map<TimeSeriesInfo, TimeSeriesProcessor> map = new HashMap<>();
@@ -47,18 +46,21 @@ public class EliteBgsDecoder implements Decoder {
         try (InputStreamReader reader = new InputStreamReader(in)) {
             var factionPages = gson.fromJson(reader, EBGSFactionsPageV4.class);
             for (var f : factionPages.docs) {
-                var proc = new DoubleTimeSeriesProcessor();
-
-                logger.info(f.toString());
-                for (var h : f.history) {
-                    if ("juipek".equalsIgnoreCase(h.system)) {
-                        proc.addSample(new XYChart.Data<>(ZonedDateTime.parse(h.updated_at), h.influence * 100));
+                for(var info : seriesNames) {
+                    var proc = new DoubleTimeSeriesProcessor();
+                    logger.info(f.toString());
+                    String parentSystem = Paths.get(info.getBinding().getTreeHierarchy()).getParent().getFileName().toString();
+                    logger.trace(() -> "Parent system for faction " + f.name + ": " + parentSystem);
+                    for (var h : f.history) {
+                        if (parentSystem.equalsIgnoreCase(h.system)) {
+                            proc.addSample(new XYChart.Data<>(ZonedDateTime.parse(h.updated_at), h.influence * 100));
+                        }
                     }
+                    map.put(info, proc);
                 }
-                map.put(seriesNames.get(0), proc);
             }
         }
-        
+
         return map;
     }
 }
