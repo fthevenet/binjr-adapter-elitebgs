@@ -60,7 +60,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private static final String API_SYSTEMS = "/api/ebgs/v4/systems";
     private static final String FRONTEND_FACTIONS = "/frontend/factions";
     private static final String FRONTEND_SYSTEMS = "/frontend/systems";
-    private static final String TITLE = "Elite BGS";
+    private static final String TITLE = "Elite Dangerous BGS";
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(getURL());
@@ -97,7 +97,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
         var root = makeBranch(TITLE, TITLE, "");
         var systems = getSystems(root);
-        var factions = getFactions();
+        var factions = getFactions(root);
         root.getInternalChildren().addAll(systems, factions);
 
         return root;
@@ -130,7 +130,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                 for (int page = 2; page <= nbPages.get(); page++) {
                     addSystemsPage(tree, beginWith, page, false);
                 }
-            }else{
+            } else {
                 logger.warn("No results from synchronous call to addSystemPage");
             }
         }
@@ -140,9 +140,9 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         Gson gson = new Gson();
         AtomicReference<EBGSSystemsPageV4> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
-                   var pages = gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class);
-                   returnValue.set(pages);
-                   return pages;
+                    var pages = gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class);
+                    returnValue.set(pages);
+                    return pages;
                 },
                 event -> {
                     EBGSSystemsPageV4 t = (EBGSSystemsPageV4) event.getSource().getValue();
@@ -191,7 +191,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return entityString;
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> getFactions() {
+    private FilterableTreeItem<TimeSeriesBinding> getFactions(FilterableTreeItem<TimeSeriesBinding> parent) {
         var factionsRoot = new FilterableTreeItem<>(new TimeSeriesBinding(
                 "Factions",
                 "/Factions/",
@@ -200,8 +200,19 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                 UnitPrefixes.METRIC,
                 ChartType.LINE,
                 "",
-                "Elite BGS/Factions/",
+                parent.getValue().getTreeHierarchy() + "/Factions",
                 this));
+        factionsRoot.getInternalChildren().add(new FilterableTreeItem<>(new TimeSeriesBinding(
+                "TODO",
+                "",
+                null,
+                "TODO",
+                UnitPrefixes.METRIC,
+                ChartType.LINE,
+                "",
+                factionsRoot.getValue().getTreeHierarchy() + "/TODO",
+                this
+        )));
 
         return factionsRoot;
     }
@@ -213,12 +224,12 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     @Override
     public ZoneId getTimeZoneId() {
-        return null;
+        return ZoneId.of("UTC");
     }
 
     @Override
     public String getSourceName() {
-        return "[Elite BGS]";
+        return "[" + TITLE + "]";
     }
 
     private class SystemExpandListener implements ChangeListener<Boolean> {
@@ -244,7 +255,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                     // remove the listener so it isn't executed next time node is expanded
                     newBranch.expandedProperty().removeListener(this);
                 } catch (Exception e) {
-                    Dialogs.notifyException("Failed to retrieve Systems starting with '" + beginWith+"'", e);
+                    Dialogs.notifyException("Failed to retrieve Systems starting with '" + beginWith + "'", e);
                 }
             }
         }

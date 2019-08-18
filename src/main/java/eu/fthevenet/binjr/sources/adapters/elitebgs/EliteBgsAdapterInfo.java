@@ -21,8 +21,8 @@ import eu.binjr.core.data.adapters.BaseDataAdapterInfo;
 public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
 
     public EliteBgsAdapterInfo(){
-        super("Elite BGS",
-                "Elite BGS Data Adapter",
+        super("Elite Dangerous BGS",
+                "Elite Dangerous BGS Data Adapter",
                 "Copyright © 2019 Frederic Thevenet",
                 "Apache-2.0",
                 "https://github.com/fthevenet/binjr-adapter-elitebgs",

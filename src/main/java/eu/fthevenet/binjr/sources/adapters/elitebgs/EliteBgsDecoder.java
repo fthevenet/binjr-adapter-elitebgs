@@ -48,7 +48,6 @@ public class EliteBgsDecoder implements Decoder {
             for (var f : factionPages.docs) {
                 for(var info : seriesNames) {
                     var proc = new DoubleTimeSeriesProcessor();
-                    logger.info(f.toString());
                     String parentSystem = Paths.get(info.getBinding().getTreeHierarchy()).getParent().getFileName().toString();
                     logger.trace(() -> "Parent system for faction " + f.name + ": " + parentSystem);
                     for (var h : f.history) {
@@ -60,7 +59,6 @@ public class EliteBgsDecoder implements Decoder {
                 }
             }
         }
-
         return map;
     }
 }

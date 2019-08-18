@@ -1,14 +1,14 @@
-# Elite:Dangerous BGS adapter for binjr
+# Elite Dangerous BGS adapter for binjr
 [![Build Status](https://dev.azure.com/binjr/binjr/_apis/build/status/fthevenet.binjr-adapter-elitebgs?branchName=master&jobName=Build)](https://dev.azure.com/binjr/binjr/_build/latest?definitionId=5&branchName=master) [![Github Release](https://img.shields.io/github/release/fthevenet/binjr-adapter-elitebgs.svg?label=Github%20Release)](https://github.com/fthevenet/binjr-adapter-elitebgs/releases/latest)  
 
 This is a plugin for [binjr](https://binjr.eu), which allows it to access and visualize some of the data produced by the
- Backgroud Simulation (BGS) of the video game [Elite: Dangerous](https://elitedangerous.com) by [Frontier Development](https://frontier.co.uk).
+ Background Simulation (BGS) of the video game [Elite Dangerous](https://elitedangerous.com) by [Frontier Development](https://frontier.co.uk).
 
 [binjr](https://binjr.eu) is a time series data browser, and together with this plugin you can visualize and navigate 
 through Minor Factions' influence over star systems.
 
-In order to achieve this, it connects to and uses the [Elite BGS website](https://elitebgs.app/about) as a backend for
-the historical data uploaded by the community through the [Elite: Dangerous Data Network](https://github.com/EDSM-NET/EDDN/wiki).
+In order to achieve this, it connects to and uses the [Elite BGS](https://elitebgs.app/about) website as a backend for
+the historical data uploaded by the community through the [Elite Dangerous Data Network](https://github.com/EDSM-NET/EDDN/wiki).
 
 ### Getting started
 
