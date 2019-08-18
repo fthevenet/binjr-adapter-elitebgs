@@ -19,6 +19,10 @@ plugins {
     id 'application'
 }
 
+ext.IS_TAG = System.getenv('IS_TAG') != null ? System.getenv('IS_TAG') == "true" : false
+ext.IS_RELEASE = IS_TAG && !(System.getenv('REPO_TAG_NAME').endsWith('-SNAPSHOT'))
+ext.VERSION_STEM = "1.0.0"
+ext.PRODUCT_VERSION = "${VERSION_STEM}${IS_RELEASE ? '' : '-SNAPSHOT'}"
 ext.OS_NAME = System.getProperty("os.name").toLowerCase()
 ext.OS_ARCH = System.getProperty("os.arch")
 ext.IS_64 = OS_ARCH.toLowerCase().contains("64")
@@ -29,7 +33,7 @@ ext.OPENJFX_VERSION = "12.0.2"
 ext.OPENJFX_PLATEFORM_CLASSIFIER = IS_MAC ? 'mac' : IS_WINDOWS ? 'win' : IS_LINUX ? 'linux' : 'unsupported'
 
 group 'eu.fthevenet'
-version '1.0-SNAPSHOT'
+version "${PRODUCT_VERSION}"
 
 sourceCompatibility = 11
 
