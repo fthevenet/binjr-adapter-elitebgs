@@ -7,6 +7,8 @@ This is a plugin for [binjr](https://binjr.eu), which allows it to access and vi
 [binjr](https://binjr.eu) is a time series data browser, and together with this plugin you can visualize and navigate 
 through Minor Factions' influence over star systems.
 
+![screenshot](screenshot_01.png)
+
 In order to achieve this, it connects to and uses the [Elite BGS](https://elitebgs.app/about) website as a backend for
 the historical data uploaded by the community through the [Elite Dangerous Data Network](https://github.com/EDSM-NET/EDDN/wiki).
 
@@ -20,7 +22,7 @@ the historical data uploaded by the community through the [Elite Dangerous Data 
 
 ### License
 
-The Elite BGS adapter for binjr is copyright 2019 Frederic Thevenet  
+The Elite BGS adapter for binjr is copyright 2019 Frederic Thevenet.  
 Licensed under the terms of the [Apache License version 2.0](https://apache.org/licenses/LICENSE-2.0).
 
 This is an open source, community driven project and is not affiliated with or endorsed by [Frontier Development](https://frontier.co.uk).
