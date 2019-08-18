@@ -12,8 +12,23 @@ steps:
     gradleWrapperFile: 'gradlew'
     gradleOptions: '-Xmx3072m'
     javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.11'
+    jdkVersionOption: '1.12'
     jdkArchitectureOption: 'x64'
     publishJUnitResults: false
     testResultsFiles: '**/TEST-*.xml'
     tasks: 'jar'
+
+- task: GithubRelease@0
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      gitHubConnection: binjr-bot
+      repositoryName: fthevenet/binjr-adapter-elitebgs
+      action: edit
+      tag: $(Build.SourceBranchName)
+      assets: |
+        $(System.DefaultWorkingDirectory)/build/libs/*.jar
+      assetUploadMode: 'replace'
+      releaseNotesSource: 'file'
+      releaseNotesFile: $(System.DefaultWorkingDirectory)/UNRELEASED.md
+      addChangeLog: false
+      isPreRelease: $(isSnapshot)
