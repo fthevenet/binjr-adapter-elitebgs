@@ -28,7 +28,10 @@ import eu.binjr.core.data.workspace.ChartType;
 import eu.binjr.core.data.workspace.UnitPrefixes;
 import eu.binjr.core.dialogs.Dialogs;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.EBGSPage;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.*;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSFactionsPageV4;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSFactionsV4;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSSystemsPageV4;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSSystemsV4;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import org.apache.http.NameValuePair;
@@ -103,7 +106,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return root;
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(FilterableTreeItem<TimeSeriesBinding> root, String name, String id,AddPageDelegate onExpandAction) throws DataAdapterException {
+    private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(FilterableTreeItem<TimeSeriesBinding> root, String name, String id, AddPageDelegate onExpandAction) throws DataAdapterException {
         var tree = makeBranch(name, id, root.getValue().getTreeHierarchy());
         String alphabet = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         for (int i = 0; i < alphabet.length(); i++) {
@@ -139,7 +142,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         Gson gson = new Gson();
         AtomicReference<EBGSSystemsPageV4> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
-                    var pages = gson.fromJson(getSystemsTree(page, beginWith), EBGSSystemsPageV4.class);
+                    var pages = gson.fromJson(getRawPageData(FRONTEND_SYSTEMS, beginWith, page), EBGSSystemsPageV4.class);
                     returnValue.set(pages);
                     return pages;
                 },
@@ -171,7 +174,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         Gson gson = new Gson();
         AtomicReference<EBGSFactionsPageV4> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
-                    var pages = gson.fromJson(getFactionsTree(page, beginWith), EBGSFactionsPageV4.class);
+                    var pages = gson.fromJson(getRawPageData(API_FACTIONS, beginWith, page), EBGSFactionsPageV4.class);
                     returnValue.set(pages);
                     return pages;
                 },
@@ -199,13 +202,6 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return returnValue.get();
     }
 
-
-
-    @FunctionalInterface
-    private interface AddPageDelegate{
-        EBGSPage<?> addSinglePage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
-    }
-
     private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy) {
         return new FilterableTreeItem<>(new TimeSeriesBinding(
                 name,
@@ -219,23 +215,12 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                 this));
     }
 
-    private String getSystemsTree(int page, String beginWith) throws DataAdapterException {
+    private String getRawPageData(String uriPath, String beginWith, int page) throws DataAdapterException {
         List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("page", Integer.toString(page)));
         params.add(new BasicNameValuePair("beginsWith", beginWith));
 
-        String entityString = doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler());
-        logger.trace(entityString);
-        return entityString;
-    }
-
-
-    private String getFactionsTree(int page, String beginWith) throws DataAdapterException{
-        List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("page", Integer.toString(page)));
-        params.add(new BasicNameValuePair("beginsWith", beginWith));
-
-        String entityString = doHttpGet(craftRequestUri(API_FACTIONS, params), new BasicResponseHandler());
+        String entityString = doHttpGet(craftRequestUri(uriPath, params), new BasicResponseHandler());
         logger.trace(entityString);
         return entityString;
     }
@@ -255,6 +240,11 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return "[" + TITLE + "]";
     }
 
+    @FunctionalInterface
+    private interface AddPageDelegate {
+        EBGSPage<?> addSinglePage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
+    }
+
     private class ExpandListener implements ChangeListener<Boolean> {
         private final FilterableTreeItem<TimeSeriesBinding> newBranch;
         private final String beginWith;
@@ -272,7 +262,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (newValue) {
                 try {
-                   // onExpandAction.apply(newBranch, beginWith);
+                    // onExpandAction.apply(newBranch, beginWith);
                     addAllPages(newBranch, beginWith, addPageDelegate);
                     //remove dummy node
                     newBranch.getInternalChildren().remove(0);
