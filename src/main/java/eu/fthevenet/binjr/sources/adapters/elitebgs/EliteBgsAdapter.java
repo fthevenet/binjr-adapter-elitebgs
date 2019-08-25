@@ -27,8 +27,8 @@ import eu.binjr.core.data.exceptions.DataAdapterException;
 import eu.binjr.core.data.workspace.ChartType;
 import eu.binjr.core.data.workspace.UnitPrefixes;
 import eu.binjr.core.dialogs.Dialogs;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSSystemsPageV4;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSSystemsV4;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.EBGSPage;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import org.apache.http.NameValuePair;
@@ -96,39 +96,38 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     @Override
     public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
         var root = makeBranch(TITLE, TITLE, "");
-        var systems = getSystems(root);
-        var factions = getFactions(root);
+        var systems = getPaginatedNodes(root, "Systems", "Systems", this::addSystemsPage);
+        var factions = getPaginatedNodes(root, "Factions", "Factions", this::addFactionsPage);
         root.getInternalChildren().addAll(systems, factions);
 
         return root;
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> getSystems(FilterableTreeItem<TimeSeriesBinding> root) throws DataAdapterException {
-        var tree = makeBranch("Systems", "Systems", root.getValue().getTreeHierarchy());
+    private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(FilterableTreeItem<TimeSeriesBinding> root, String name, String id,AddPageDelegate onExpandAction) throws DataAdapterException {
+        var tree = makeBranch(name, id, root.getValue().getTreeHierarchy());
         String alphabet = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         for (int i = 0; i < alphabet.length(); i++) {
             String letter = String.valueOf(alphabet.charAt(i));
             var newBranch = makeBranch(letter, letter, tree.getValue().getTreeHierarchy());
             // add a dummy node so that the branch can be expanded
             newBranch.getInternalChildren().add(new FilterableTreeItem<>(null));
-            newBranch.expandedProperty().addListener(new SystemExpandListener(letter, letter, newBranch, tree));
+            newBranch.expandedProperty().addListener(new ExpandListener(newBranch, letter, onExpandAction));
             tree.getInternalChildren().add(newBranch);
         }
         return tree;
     }
 
-    private void addAllSystemsPages(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith) throws DataAdapterException {
+    private void addAllPages(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, AddPageDelegate pageDelegate) throws DataAdapterException {
         AtomicInteger nbPages = new AtomicInteger(0);
         AtomicInteger nbHits = new AtomicInteger(0);
-        try (var p = Profiler.start(() -> "Retrieving " + nbHits.get() + " system(s) starting with '" + beginWith + "' (" + nbPages.get() + " pages)", logger::trace)) {
-            EBGSSystemsPageV4 res = addSystemsPage(tree, beginWith, 1, true);
+        try (var p = Profiler.start(() -> "Retrieving " + nbHits.get() + " elements starting with '" + beginWith + "' (" + nbPages.get() + " pages)", logger::trace)) {
+            EBGSPage<?> res = pageDelegate.addSinglePage(tree, beginWith, 1, true);
             if (res != null) {
                 logger.info("pages=" + res.pages);
-                //  var res = addSystemsPage(tree, beginWith, 1);
                 nbPages.addAndGet(res.pages);
                 nbHits.addAndGet(res.total);
                 for (int page = 2; page <= nbPages.get(); page++) {
-                    addSystemsPage(tree, beginWith, page, false);
+                    pageDelegate.addSinglePage(tree, beginWith, page, false);
                 }
             } else {
                 logger.warn("No results from synchronous call to addSystemPage");
@@ -168,6 +167,45 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return returnValue.get();
     }
 
+    private EBGSFactionsPageV4 addFactionsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException {
+        Gson gson = new Gson();
+        AtomicReference<EBGSFactionsPageV4> returnValue = new AtomicReference<>(null);
+        var res = AsyncTaskManager.getInstance().submit(() -> {
+                    var pages = gson.fromJson(getFactionsTree(page, beginWith), EBGSFactionsPageV4.class);
+                    returnValue.set(pages);
+                    return pages;
+                },
+                event -> {
+                    EBGSFactionsPageV4 t = (EBGSFactionsPageV4) event.getSource().getValue();
+                    Map<String, EBGSFactionsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
+                    for (EBGSFactionsV4 f : m.values()) {
+                        var branch = makeBranch(f.name, f._id, tree.getValue().getTreeHierarchy());
+                        for (var s : f.faction_presence) {
+                            branch.getInternalChildren().add(makeBranch(s.system_name, f._id, branch.getValue().getTreeHierarchy()));
+                        }
+                        tree.getInternalChildren().add(branch);
+                    }
+                },
+                event -> {
+                    Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException());
+                });
+        if (waitForResult) {
+            try {
+                res.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new DataAdapterException(e);
+            }
+        }
+        return returnValue.get();
+    }
+
+
+
+    @FunctionalInterface
+    private interface AddPageDelegate{
+        EBGSPage<?> addSinglePage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
+    }
+
     private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy) {
         return new FilterableTreeItem<>(new TimeSeriesBinding(
                 name,
@@ -191,30 +229,15 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return entityString;
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> getFactions(FilterableTreeItem<TimeSeriesBinding> parent) {
-        var factionsRoot = new FilterableTreeItem<>(new TimeSeriesBinding(
-                "Factions",
-                "/Factions/",
-                null,
-                "Factions",
-                UnitPrefixes.METRIC,
-                ChartType.LINE,
-                "",
-                parent.getValue().getTreeHierarchy() + "/Factions",
-                this));
-        factionsRoot.getInternalChildren().add(new FilterableTreeItem<>(new TimeSeriesBinding(
-                "TODO",
-                "",
-                null,
-                "TODO",
-                UnitPrefixes.METRIC,
-                ChartType.LINE,
-                "",
-                factionsRoot.getValue().getTreeHierarchy() + "/TODO",
-                this
-        )));
 
-        return factionsRoot;
+    private String getFactionsTree(int page, String beginWith) throws DataAdapterException{
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("page", Integer.toString(page)));
+        params.add(new BasicNameValuePair("beginsWith", beginWith));
+
+        String entityString = doHttpGet(craftRequestUri(API_FACTIONS, params), new BasicResponseHandler());
+        logger.trace(entityString);
+        return entityString;
     }
 
     @Override
@@ -232,30 +255,31 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return "[" + TITLE + "]";
     }
 
-    private class SystemExpandListener implements ChangeListener<Boolean> {
-        private final String currentPath;
+    private class ExpandListener implements ChangeListener<Boolean> {
         private final FilterableTreeItem<TimeSeriesBinding> newBranch;
-        private final FilterableTreeItem<TimeSeriesBinding> tree;
         private final String beginWith;
+        private final AddPageDelegate addPageDelegate;
 
-        public SystemExpandListener(String currentPath, String beginWith, FilterableTreeItem<TimeSeriesBinding> newBranch, FilterableTreeItem<TimeSeriesBinding> tree) {
-            this.currentPath = currentPath;
+        public ExpandListener(FilterableTreeItem<TimeSeriesBinding> newBranch,
+                              String beginWith,
+                              AddPageDelegate onExpandAction) {
             this.newBranch = newBranch;
             this.beginWith = beginWith;
-            this.tree = tree;
+            this.addPageDelegate = onExpandAction;
         }
 
         @Override
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (newValue) {
                 try {
-                    addAllSystemsPages(newBranch, beginWith);
+                   // onExpandAction.apply(newBranch, beginWith);
+                    addAllPages(newBranch, beginWith, addPageDelegate);
                     //remove dummy node
                     newBranch.getInternalChildren().remove(0);
                     // remove the listener so it isn't executed next time node is expanded
                     newBranch.expandedProperty().removeListener(this);
                 } catch (Exception e) {
-                    Dialogs.notifyException("Failed to retrieve Systems starting with '" + beginWith + "'", e);
+                    Dialogs.notifyException("Failed to retrieve page starting with '" + beginWith + "'", e);
                 }
             }
         }

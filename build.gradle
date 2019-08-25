@@ -36,6 +36,9 @@ group 'eu.fthevenet'
 version "${PRODUCT_VERSION}"
 
 sourceCompatibility = 11
+targetCompatibility = 11
+description 'Elite Dangerous BGS adapter'
+compileJava.options.encoding = 'UTF-8'
 
 dependencies {
     compile 'eu.binjr:binjr-core:2.7.0'
@@ -67,9 +70,6 @@ repositories {
     }
 }
 
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-}
 
 run {
     systemProperties System.getProperties()

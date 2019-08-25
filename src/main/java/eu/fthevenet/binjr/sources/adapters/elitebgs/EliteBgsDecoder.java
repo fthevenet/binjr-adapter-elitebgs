@@ -30,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -46,10 +47,16 @@ public class EliteBgsDecoder implements Decoder {
         try (InputStreamReader reader = new InputStreamReader(in)) {
             var factionPages = gson.fromJson(reader, EBGSFactionsPageV4.class);
             for (var f : factionPages.docs) {
-                for(var info : seriesNames) {
+                for (var info : seriesNames) {
                     var proc = new DoubleTimeSeriesProcessor();
-                    String parentSystem = Paths.get(info.getBinding().getTreeHierarchy()).getParent().getFileName().toString();
-                    logger.trace(() -> "Parent system for faction " + f.name + ": " + parentSystem);
+                    Path hierarchy = Paths.get(info.getBinding().getTreeHierarchy());
+                    String parentSystem = hierarchy.getFileName().toString();
+                    if ( parentSystem.equalsIgnoreCase(f.name)) {
+                        parentSystem = hierarchy.getParent().getFileName().toString();
+                    }
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Parent system for faction " + f.name + ": " + parentSystem);
+                    }
                     for (var h : f.history) {
                         if (parentSystem.equalsIgnoreCase(h.system)) {
                             proc.addSample(new XYChart.Data<>(ZonedDateTime.parse(h.updated_at), h.influence * 100));

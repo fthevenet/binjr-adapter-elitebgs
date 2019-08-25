@@ -16,10 +16,8 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-public class EBGSFactionsPageV4 {
-    public EBGSFactionsV4[] docs;
-    public int total;
-    public int limit;
-    public int page;
-    public int pages;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.EBGSPage;
+
+public class EBGSFactionsPageV4 extends EBGSPage<EBGSFactionsV4> {
+
 }
