@@ -21,7 +21,7 @@ plugins {
 
 ext.IS_TAG = System.getenv('IS_TAG') != null ? System.getenv('IS_TAG') == "true" : false
 ext.IS_RELEASE = IS_TAG && !(System.getenv('REPO_TAG_NAME').endsWith('-SNAPSHOT'))
-ext.VERSION_STEM = "0.2.0"
+ext.VERSION_STEM = "0.3.0"
 ext.PRODUCT_VERSION = "${VERSION_STEM}${IS_RELEASE ? '' : '-SNAPSHOT'}"
 ext.OS_NAME = System.getProperty("os.name").toLowerCase()
 ext.OS_ARCH = System.getProperty("os.arch")

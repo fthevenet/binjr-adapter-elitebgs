@@ -1,1 +1,0 @@
-* _[New]_ Implemented browsing the tree by factions.
