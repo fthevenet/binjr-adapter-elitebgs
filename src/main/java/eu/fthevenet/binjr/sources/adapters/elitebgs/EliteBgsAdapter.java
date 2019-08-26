@@ -64,6 +64,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private static final String FRONTEND_FACTIONS = "/frontend/factions";
     private static final String FRONTEND_SYSTEMS = "/frontend/systems";
     private static final String TITLE = "Elite Dangerous BGS";
+    private final EliteBgsDecoder eliteBgsDecoder;
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(getURL());
@@ -71,6 +72,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     public EliteBgsAdapter(URL baseAddress) throws CannotInitializeDataAdapterException {
         super(baseAddress);
+        this.eliteBgsDecoder = new EliteBgsDecoder();
     }
 
     private static URL getURL() throws CannotInitializeDataAdapterException {
@@ -93,28 +95,43 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     @Override
     public Decoder getDecoder() {
-        return new EliteBgsDecoder();
+        return eliteBgsDecoder;
     }
 
     @Override
     public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
         var root = makeBranch(TITLE, TITLE, "");
-        var systems = getPaginatedNodes(root, "Systems", "Systems", this::addSystemsPage);
-        var factions = getPaginatedNodes(root, "Factions", "Factions", this::addFactionsPage);
+        var systems = getPaginatedNodes(root.getValue(), "Systems", "Systems", this::addSystemsPage);
+        var factions = getPaginatedNodes(root.getValue(), "Factions", "Factions", this::addFactionsPage);
         root.getInternalChildren().addAll(systems, factions);
 
         return root;
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(FilterableTreeItem<TimeSeriesBinding> root, String name, String id, AddPageDelegate onExpandAction) throws DataAdapterException {
-        var tree = makeBranch(name, id, root.getValue().getTreeHierarchy());
+    @Override
+    public String getEncoding() {
+        return StandardCharsets.UTF_8.toString();
+    }
+
+    @Override
+    public ZoneId getTimeZoneId() {
+        return ZoneId.of("UTC");
+    }
+
+    @Override
+    public String getSourceName() {
+        return "[" + TITLE + "]";
+    }
+
+    private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(TimeSeriesBinding parent, String name, String id, AddPageDelegate addPageDelegate) throws DataAdapterException {
+        var tree = makeBranch(name, id, parent.getTreeHierarchy());
         String alphabet = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         for (int i = 0; i < alphabet.length(); i++) {
             String letter = String.valueOf(alphabet.charAt(i));
             var newBranch = makeBranch(letter, letter, tree.getValue().getTreeHierarchy());
             // add a dummy node so that the branch can be expanded
             newBranch.getInternalChildren().add(new FilterableTreeItem<>(null));
-            newBranch.expandedProperty().addListener(new ExpandListener(newBranch, letter, onExpandAction));
+            newBranch.expandedProperty().addListener(new ExpandListener(newBranch, letter, addPageDelegate));
             tree.getInternalChildren().add(newBranch);
         }
         return tree;
@@ -223,21 +240,6 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         String entityString = doHttpGet(craftRequestUri(uriPath, params), new BasicResponseHandler());
         logger.trace(entityString);
         return entityString;
-    }
-
-    @Override
-    public String getEncoding() {
-        return StandardCharsets.UTF_8.toString();
-    }
-
-    @Override
-    public ZoneId getTimeZoneId() {
-        return ZoneId.of("UTC");
-    }
-
-    @Override
-    public String getSourceName() {
-        return "[" + TITLE + "]";
     }
 
     @FunctionalInterface
