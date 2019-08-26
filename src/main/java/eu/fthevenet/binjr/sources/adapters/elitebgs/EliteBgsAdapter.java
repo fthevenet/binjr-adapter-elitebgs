@@ -65,6 +65,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private static final String FRONTEND_SYSTEMS = "/frontend/systems";
     private static final String TITLE = "Elite Dangerous BGS";
     private final EliteBgsDecoder eliteBgsDecoder;
+    private final Gson gson;
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(getURL());
@@ -73,6 +74,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     public EliteBgsAdapter(URL baseAddress) throws CannotInitializeDataAdapterException {
         super(baseAddress);
         this.eliteBgsDecoder = new EliteBgsDecoder();
+        gson = new Gson();
     }
 
     private static URL getURL() throws CannotInitializeDataAdapterException {
@@ -156,7 +158,6 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     }
 
     private EBGSSystemsPageV4 addSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException {
-        Gson gson = new Gson();
         AtomicReference<EBGSSystemsPageV4> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
                     var pages = gson.fromJson(getRawPageData(FRONTEND_SYSTEMS, beginWith, page), EBGSSystemsPageV4.class);
@@ -188,7 +189,6 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     }
 
     private EBGSFactionsPageV4 addFactionsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException {
-        Gson gson = new Gson();
         AtomicReference<EBGSFactionsPageV4> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
                     var pages = gson.fromJson(getRawPageData(API_FACTIONS, beginWith, page), EBGSFactionsPageV4.class);

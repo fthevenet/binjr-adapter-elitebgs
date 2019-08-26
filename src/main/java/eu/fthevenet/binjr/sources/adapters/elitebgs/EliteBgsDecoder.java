@@ -39,11 +39,15 @@ import java.util.Map;
 
 public class EliteBgsDecoder implements Decoder {
     private static final Logger logger = LogManager.getLogger(EliteBgsDecoder.class);
+    private final Gson gson;
+
+    public EliteBgsDecoder() {
+        gson = new Gson();
+    }
 
     @Override
     public Map<TimeSeriesInfo, TimeSeriesProcessor> decode(InputStream in, List<TimeSeriesInfo> seriesNames) throws IOException, DecodingDataFromAdapterException {
         Map<TimeSeriesInfo, TimeSeriesProcessor> map = new HashMap<>();
-        Gson gson = new Gson();
         try (InputStreamReader reader = new InputStreamReader(in)) {
             var factionPages = gson.fromJson(reader, EBGSFactionsPageV4.class);
             for (var f : factionPages.docs) {
