@@ -105,7 +105,8 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         var root = makeBranch(TITLE, TITLE, "");
         var systems = getPaginatedNodes(root.getValue(), "Systems", "Systems", this::addSystemsPage);
         var factions = getPaginatedNodes(root.getValue(), "Factions", "Factions", this::addFactionsPage);
-        root.getInternalChildren().addAll(systems, factions);
+        var systemByFactions = getSystemsByFactions(root.getValue(), "Union of Juipek Resistance", "59e7d34fd22c775be0ff6108");
+        root.getInternalChildren().addAll(systems, factions, systemByFactions);
 
         return root;
     }
@@ -123,6 +124,45 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     @Override
     public String getSourceName() {
         return "[" + TITLE + "]";
+    }
+
+    private FilterableTreeItem<TimeSeriesBinding> getSystemsByFactions(TimeSeriesBinding parent, String factionName, String factionId) {
+        var tree = makeBranch("Systems by factions", factionId, parent.getTreeHierarchy());
+        var res = AsyncTaskManager.getInstance().submit(() -> {
+                    var pages = gson.fromJson(
+                            doHttpGet(craftRequestUri(FRONTEND_FACTIONS, new BasicNameValuePair("id", factionId)),
+                                    new BasicResponseHandler()),
+                            EBGSFactionsPageV4.class);
+                    for (EBGSFactionsV4 f : pages.docs) {
+                        var factionBranch = makeBranch(f.name, f._id, tree.getValue().getTreeHierarchy());
+                        List<NameValuePair> params = new ArrayList<>();
+                        for (var fp : f.faction_presence) {
+                            params.add(new BasicNameValuePair("id", fp.system_id));
+                        }
+
+                        var systemsPages = gson.fromJson
+                                (doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler()),
+                                        EBGSSystemsPageV4.class);
+                        for (EBGSSystemsV4 s : systemsPages.docs) {
+                            var branch = makeBranch(s.name, s._id, tree.getValue().getTreeHierarchy());
+                            for (var sp : s.factions) {
+                                branch.getInternalChildren().add(makeBranch(sp.name, sp.faction_id, branch.getValue().getTreeHierarchy()));
+                            }
+                            factionBranch.getInternalChildren().add(branch);
+                        }
+                        tree.getInternalChildren().add(factionBranch);
+                    }
+                    return pages;
+                },
+                event -> {
+                    EBGSFactionsPageV4 pages = (EBGSFactionsPageV4) event.getSource().getValue();
+
+
+                },
+                event -> {
+                    Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException());
+                });
+        return tree;
     }
 
     private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(TimeSeriesBinding parent, String name, String id, AddPageDelegate addPageDelegate) throws DataAdapterException {

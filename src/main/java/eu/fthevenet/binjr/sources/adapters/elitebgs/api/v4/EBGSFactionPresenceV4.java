@@ -17,9 +17,12 @@
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
 public class EBGSFactionPresenceV4 {
+    public String system_id;
     public String system_name;
     public String system_name_lower;
     public String state;
+    public String happiness;
+    public String  updated_at;
     public double influence;
     public EBGSStateV4[] pending_states;
     public EBGSStateV4[] recovering_states;
