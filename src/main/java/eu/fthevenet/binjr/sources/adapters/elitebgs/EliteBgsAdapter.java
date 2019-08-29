@@ -136,11 +136,6 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                         new BasicResponseHandler()),
                 EBGSFactionsPageV4.class);
         for (EBGSFactionsV4 f : pages.docs) {
-          //  var factionBranch = makeBranch(f.name, f._id, tree.getValue().getTreeHierarchy());
-//                        List<NameValuePair> params = new ArrayList<>();
-//                        for (var fp : f.faction_presence) {
-//                            params.add(new BasicNameValuePair("id", fp.system_id));
-//                        }
             int nbFactions = f.faction_presence.length;
 
             List<List<NameValuePair>> paramPages = new ArrayList<>();
@@ -153,11 +148,9 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                 }
                 currentList.add(new BasicNameValuePair("id", f.faction_presence[i].system_id));
             }
-         //   tree.getInternalChildren().add(factionBranch);
-
-            AsyncTaskManager.getInstance().submit(() -> {
-                        List<FilterableTreeItem<TimeSeriesBinding>> nodes= new ArrayList<>();
-                        for (var params : paramPages) {
+            for (var params : paramPages) {
+                AsyncTaskManager.getInstance().submit(() -> {
+                            List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
                             var systemsPages = gson.fromJson(
                                     doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler()),
                                     EBGSSystemsPageV4.class);
@@ -168,39 +161,19 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                                 }
                                 nodes.add(branch);
                             }
+                            return nodes;
+                        },
+                        event -> {
+                            factionBranch.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue());
+                             },
+                        event -> {
+                            Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException());
                         }
-                        return nodes;
-                    },
-
-                    event -> {
-                        factionBranch.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>)event.getSource().getValue());
-                        // EBGSFactionsPageV4 pages = (EBGSFactionsPageV4) ;
-
-                    },
-                    event -> {
-                        Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException());
-                    }
-
-            );
-
+                );
+            }
         }
         return factionBranch;
     }
-
-
-//    var res = AsyncTaskManager.getInstance().submit(() -> {
-//    },
-//                    return pages;
-//},
-//
-//        event -> {
-//        EBGSFactionsPageV4 pages = (EBGSFactionsPageV4) event.getSource().getValue();
-//
-//
-//        },
-//        event -> {
-//        Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException());
-//        });
 
     private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(TimeSeriesBinding parent, String name, String
             id, AddPageDelegate addPageDelegate) throws DataAdapterException {
