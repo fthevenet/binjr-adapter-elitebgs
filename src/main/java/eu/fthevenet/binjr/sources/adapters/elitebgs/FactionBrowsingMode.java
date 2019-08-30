@@ -16,17 +16,19 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
-import eu.binjr.core.data.adapters.BaseDataAdapterInfo;
+public enum FactionBrowsingMode {
+    BROWSE_BY_SYSTEM("Browse by Systems"),
+    BROWSE_BY_FACTIONS("Browse by Factions"),
+    LOOKUP("Look for a specific faction");
 
-public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
+    private final String label;
 
-    public EliteBgsAdapterInfo(){
-        super("Elite Dangerous BGS",
-                "Elite Dangerous BGS Data Adapter",
-                "Copyright © 2019 Frederic Thevenet",
-                "Apache-2.0",
-                "https://github.com/fthevenet/binjr-adapter-elitebgs",
-                EliteBgsAdapter.class,
-                EliteBgsAdapterDialog.class);
+    FactionBrowsingMode(String label){
+        this.label = label;
+    }
+
+    @Override
+    public String toString() {
+        return this.label;
     }
 }
