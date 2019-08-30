@@ -27,12 +27,12 @@ import eu.binjr.core.data.exceptions.DataAdapterException;
 import eu.binjr.core.data.workspace.ChartType;
 import eu.binjr.core.data.workspace.UnitPrefixes;
 import eu.binjr.core.dialogs.Dialogs;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.EBGSPage;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.EBGSQueryParameters;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSFactionsPageV4;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSFactionsV4;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSSystemsPageV4;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSSystemsV4;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.AbstractPage;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.QueryParameters;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.FactionsPage;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.Factions;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.SystemsPage;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.Systems;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import org.apache.http.NameValuePair;
@@ -67,13 +67,13 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private static final String TITLE = "Elite Dangerous BGS";
     private final EliteBgsDecoder eliteBgsDecoder;
     private final Gson gson;
-    private final List<EBGSQueryParameters> queryFilters = new ArrayList<>();
+    private final List<QueryParameters> queryFilters = new ArrayList<>();
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(getURL());
     }
 
-    public EliteBgsAdapter(EBGSQueryParameters... queryFilters) throws CannotInitializeDataAdapterException {
+    public EliteBgsAdapter(QueryParameters... queryFilters) throws CannotInitializeDataAdapterException {
         this(getURL());
         this.addQueryFilters(queryFilters);
     }
@@ -96,9 +96,9 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     @Override
     protected URI craftFetchUri(String path, Instant begin, Instant end) throws DataAdapterException {
         return craftRequestUri(API_FACTIONS,
-                EBGSQueryParameters.id(path).toValuePair(),
-                EBGSQueryParameters.timeMin(begin).toValuePair(),
-                EBGSQueryParameters.timeMax(end).toValuePair());
+                QueryParameters.id(path).toValuePair(),
+                QueryParameters.timeMin(begin).toValuePair(),
+                QueryParameters.timeMax(end).toValuePair());
     }
 
     @Override
@@ -134,7 +134,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return "[" + TITLE + "]";
     }
 
-    public void addQueryFilters(EBGSQueryParameters... filters) {
+    public void addQueryFilters(QueryParameters... filters) {
         queryFilters.addAll(Arrays.asList(filters));
     }
 
@@ -142,18 +142,18 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         queryFilters.clear();
     }
 
-    public EBGSQueryParameters[] getFilters() {
-        return queryFilters.toArray(EBGSQueryParameters[]::new);
+    public QueryParameters[] getFilters() {
+        return queryFilters.toArray(QueryParameters[]::new);
     }
 
     private FilterableTreeItem<TimeSeriesBinding> getSystemsByFactions(TimeSeriesBinding parent, String factionName, String factionId) throws DataAdapterException {
         var factionBranch = makeBranch(factionName, factionId, parent.getTreeHierarchy());
-        var factionParams = EBGSQueryParameters.toValuePairArray(queryFilters);
-        factionParams.add(EBGSQueryParameters.id(factionId).toValuePair());
+        var factionParams = QueryParameters.toValuePairArray(queryFilters);
+        factionParams.add(QueryParameters.id(factionId).toValuePair());
         var pages = gson.fromJson(
                 doHttpGet(craftRequestUri(FRONTEND_FACTIONS, factionParams), new BasicResponseHandler()),
-                EBGSFactionsPageV4.class);
-        for (EBGSFactionsV4 f : pages.docs) {
+                FactionsPage.class);
+        for (Factions f : pages.docs) {
             int nbFactions = f.faction_presence.length;
             List<List<NameValuePair>> paramPages = new ArrayList<>();
             var currentList = new ArrayList<NameValuePair>();
@@ -163,16 +163,16 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                     currentList = new ArrayList<NameValuePair>();
                     paramPages.add(currentList);
                 }
-                currentList.add(new BasicNameValuePair(EBGSQueryParameters.PARAM_ID, f.faction_presence[i].system_id));
+                currentList.add(new BasicNameValuePair(QueryParameters.PARAM_ID, f.faction_presence[i].system_id));
             }
             for (var params : paramPages) {
-                params.addAll(EBGSQueryParameters.toValuePairArray(queryFilters));
+                params.addAll(QueryParameters.toValuePairArray(queryFilters));
                 AsyncTaskManager.getInstance().submit(() -> {
                             List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
                             var systemsPages = gson.fromJson(
                                     doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler()),
-                                    EBGSSystemsPageV4.class);
-                            for (EBGSSystemsV4 s : systemsPages.docs) {
+                                    SystemsPage.class);
+                            for (Systems s : systemsPages.docs) {
                                 var branch = makeBranch(s.name, s._id, factionBranch.getValue().getTreeHierarchy());
                                 for (var sp : s.factions) {
                                     branch.getInternalChildren().add(makeBranch(sp.name, sp.faction_id, branch.getValue().getTreeHierarchy()));
@@ -209,7 +209,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         AtomicInteger nbPages = new AtomicInteger(0);
         AtomicInteger nbHits = new AtomicInteger(0);
         try (var p = Profiler.start(() -> "Retrieving " + nbHits.get() + " elements starting with '" + beginWith + "' (" + nbPages.get() + " pages)", logger::trace)) {
-            EBGSPage<?> res = pageDelegate.addSinglePage(tree, beginWith, 1, true);
+            AbstractPage<?> res = pageDelegate.addSinglePage(tree, beginWith, 1, true);
             if (res != null) {
                 logger.info("pages=" + res.pages);
                 nbPages.addAndGet(res.pages);
@@ -223,18 +223,18 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         }
     }
 
-    private EBGSSystemsPageV4 addSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith,
-                                             int page, boolean waitForResult) throws DataAdapterException {
-        AtomicReference<EBGSSystemsPageV4> returnValue = new AtomicReference<>(null);
+    private SystemsPage addSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith,
+                                       int page, boolean waitForResult) throws DataAdapterException {
+        AtomicReference<SystemsPage> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
-                    var pages = gson.fromJson(getRawPageData(FRONTEND_SYSTEMS, beginWith, page), EBGSSystemsPageV4.class);
+                    var pages = gson.fromJson(getRawPageData(FRONTEND_SYSTEMS, beginWith, page), SystemsPage.class);
                     returnValue.set(pages);
                     return pages;
                 },
                 event -> {
-                    EBGSSystemsPageV4 t = (EBGSSystemsPageV4) event.getSource().getValue();
-                    Map<String, EBGSSystemsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
-                    for (EBGSSystemsV4 s : m.values()) {
+                    SystemsPage t = (SystemsPage) event.getSource().getValue();
+                    Map<String, Systems> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
+                    for (Systems s : m.values()) {
                         var branch = makeBranch(s.name, s._id, tree.getValue().getTreeHierarchy());
                         for (var f : s.factions) {
                             branch.getInternalChildren().add(makeBranch(f.name, f.faction_id, branch.getValue().getTreeHierarchy()));
@@ -255,18 +255,18 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return returnValue.get();
     }
 
-    private EBGSFactionsPageV4 addFactionsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith,
-                                               int page, boolean waitForResult) throws DataAdapterException {
-        AtomicReference<EBGSFactionsPageV4> returnValue = new AtomicReference<>(null);
+    private FactionsPage addFactionsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith,
+                                         int page, boolean waitForResult) throws DataAdapterException {
+        AtomicReference<FactionsPage> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
-                    var pages = gson.fromJson(getRawPageData(API_FACTIONS, beginWith, page), EBGSFactionsPageV4.class);
+                    var pages = gson.fromJson(getRawPageData(API_FACTIONS, beginWith, page), FactionsPage.class);
                     returnValue.set(pages);
                     return pages;
                 },
                 event -> {
-                    EBGSFactionsPageV4 t = (EBGSFactionsPageV4) event.getSource().getValue();
-                    Map<String, EBGSFactionsV4> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
-                    for (EBGSFactionsV4 f : m.values()) {
+                    FactionsPage t = (FactionsPage) event.getSource().getValue();
+                    Map<String, Factions> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
+                    for (Factions f : m.values()) {
                         var branch = makeBranch(f.name, f._id, tree.getValue().getTreeHierarchy());
                         for (var s : f.faction_presence) {
                             branch.getInternalChildren().add(makeBranch(s.system_name, f._id, branch.getValue().getTreeHierarchy()));
@@ -301,7 +301,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     }
 
     private String getRawPageData(String uriPath, String beginWith, int page) throws DataAdapterException {
-        var params = EBGSQueryParameters.toValuePairArray(EBGSQueryParameters.page(page), EBGSQueryParameters.beginsWith(beginWith));
+        var params = QueryParameters.toValuePairArray(QueryParameters.page(page), QueryParameters.beginsWith(beginWith));
         String entityString = doHttpGet(craftRequestUri(uriPath, params), new BasicResponseHandler());
         logger.trace(entityString);
         return entityString;
@@ -309,7 +309,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     @FunctionalInterface
     private interface AddPageDelegate {
-        EBGSPage<?> addSinglePage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
+        AbstractPage<?> addSinglePage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
     }
 
     private class ExpandListener implements ChangeListener<Boolean> {

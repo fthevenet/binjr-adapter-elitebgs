@@ -21,8 +21,10 @@ import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
 import eu.binjr.core.dialogs.Dialogs;
 import eu.binjr.core.preferences.AppEnvironment;
-import eu.binjr.core.preferences.GlobalPreferences;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.*;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyProperty;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -30,16 +32,12 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.stage.FileChooser;
+import javafx.scene.layout.VBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * A dialog box that returns a {@link EliteBgsAdapter} built according to user inputs.
@@ -50,6 +48,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private static final Logger logger = LogManager.getLogger(EliteBgsAdapterDialog.class);
     private static final String BINJR_SOURCES = "binjr/sources";
     private DataAdapter result = null;
+    private List<ReadOnlyProperty<QueryParameters>> filters = new ArrayList<>();
 
 
     /**
@@ -62,39 +61,58 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
             this.initOwner(Dialogs.getStage(owner));
         }
         this.setTitle("Elite Dangerous BGS");
-        var browsingMode = new ChoiceBox<FactionBrowsingMode>();
-        browsingMode.getItems().addAll(FactionBrowsingMode.values());
 
-        HBox pathHBox = new HBox();
-        pathHBox.setSpacing(10);
-        pathHBox.setAlignment(Pos.CENTER);
-        pathHBox.getChildren().addAll(browsingMode);
-        browsingMode.setPrefWidth(-1);
-        HBox.setHgrow(pathHBox, Priority.ALWAYS);
+
+        var browsingModeChoiceBox = new ChoiceBox<>(FXCollections.observableArrayList(FactionBrowsingMode.values()));
+        // filters.add(cb.getSelectionModel().selectedItemProperty());
+        //  hBox.getChildren().addAll(label, cb);
+        browsingModeChoiceBox.getSelectionModel().select(0);
+        VBox.setVgrow(browsingModeChoiceBox, Priority.ALWAYS);
+        browsingModeChoiceBox.setMaxWidth(Double.MAX_VALUE);
+        var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
+        var economyChoiceBox = initChoiceBox("Economy: ", EconomyTypes.values());
+        var allegianceChoiceBox = initChoiceBox("Allegiance: ", Allegiances.values());
+        var governmentChoiceBox = initChoiceBox("Government: ", GovernmentTypes.values());
+        var securityChoiceBox = initChoiceBox("Security: ", SecurityLevels.values());
+
+
+        VBox vBox = new VBox();
+        vBox.setFillWidth(true);
+        vBox.setSpacing(10);
+        vBox.setAlignment(Pos.CENTER);
+        vBox.getChildren().addAll(
+                browsingModeChoiceBox,
+                allegianceChoiceBox,
+                governmentChoiceBox,
+                securityChoiceBox,
+                economyChoiceBox,
+                stateChoiceBox);
+
+        VBox.setVgrow(vBox, Priority.ALWAYS);
 
         DialogPane dialogPane = new DialogPane();
         dialogPane.setHeaderText("Minor Factions Influence");
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         dialogPane.setGraphic(new Region());
         dialogPane.getGraphic().getStyleClass().addAll("elite-icon", "dialog-icon");
-        dialogPane.setContent(pathHBox);
+        dialogPane.setContent(vBox);
         this.setDialogPane(dialogPane);
 
 
         Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
-        Platform.runLater(browsingMode::requestFocus);
+        Platform.runLater(browsingModeChoiceBox::requestFocus);
 
         okButton.addEventFilter(ActionEvent.ACTION, ae -> {
             try {
                 result = getDataAdapter();
             } catch (CannotInitializeDataAdapterException e) {
-                Dialogs.notifyError("Error initializing adapter to source", e, Pos.CENTER, browsingMode);
+                Dialogs.notifyError("Error initializing adapter to source", e, Pos.CENTER, browsingModeChoiceBox);
                 ae.consume();
             } catch (DataAdapterException e) {
-                Dialogs.notifyError("Error with the adapter to source", e, Pos.CENTER, browsingMode);
+                Dialogs.notifyError("Error with the adapter to source", e, Pos.CENTER, browsingModeChoiceBox);
                 ae.consume();
             } catch (Throwable e) {
-                Dialogs.notifyError("Unexpected error while retrieving data adapter", e, Pos.CENTER, browsingMode);
+                Dialogs.notifyError("Unexpected error while retrieving data adapter", e, Pos.CENTER, browsingModeChoiceBox);
                 ae.consume();
             }
         });
@@ -110,6 +128,24 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         this.setResizable(AppEnvironment.getInstance().isResizableDialogs());
     }
 
+    private HBox initChoiceBox(String title, QueryParameters[] values) {
+        HBox hBox = new HBox();
+        hBox.setAlignment(Pos.CENTER_LEFT);
+        var label = new Label(title);
+        label.setPrefWidth(120);
+        label.setMinWidth(120);
+        label.setMaxWidth(120);
+        var cb = new ChoiceBox<>(FXCollections.observableArrayList(values));
+        filters.add(cb.getSelectionModel().selectedItemProperty());
+        hBox.getChildren().addAll(label, cb);
+        cb.getSelectionModel().select(0);
+        VBox.setVgrow(cb, Priority.ALWAYS);
+        VBox.setVgrow(hBox, Priority.ALWAYS);
+        hBox.setMaxWidth(Double.MAX_VALUE);
+        cb.setMaxWidth(Double.MAX_VALUE);
+        cb.setPrefWidth(-1);
+        return hBox;
+    }
 
     /**
      * Returns an instance of {@link EliteBgsAdapter}
@@ -118,9 +154,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
      * @throws DataAdapterException if the provided parameters are invalid
      */
     private DataAdapter getDataAdapter() throws DataAdapterException {
-
         return new EliteBgsAdapter();
-
     }
 
 }

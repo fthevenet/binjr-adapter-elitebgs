@@ -16,26 +16,8 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-public class EBGSSystemsV4 {
-    public String _id;
-    public int __v;
-    public int eddb_id;
-    public String name;
-    public String name_lower;
-    public  double x;
-    public  double y;
-    public double z;
-    public long population;
-    public  String government;
-    public String allegiance;
-    public String state;
-    public String security;
-    public String primary_economy;
-    public boolean needs_permit;
-    public String updated_at;
-    public String controlling_minor_faction;
-    public String reserve_type;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.AbstractPage;
 
-    public EBGSSystemPresenceV4[] factions;
-    public EBGSSystemHistoryV4[] history;
+public class FactionsPage extends AbstractPage<Factions> {
+
 }

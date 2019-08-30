@@ -16,18 +16,28 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
-public enum EBGSGovernment implements EBGSQueryParameters {
+public enum GovernmentTypes implements QueryParameters {
     ALL("All", null),
-    ANARCHY("Anarchy", "$system_security_anarchy;"),
-    LOW("Low Security", "$system_security_low;"),
-    MEDIUM("Medium Security", "$system_security_medium;"),
-    HIGH("High Security",  "$system_security_anarchy;");
+    ANARCHY("Anarchy","$government_Anarchy;"),
+    COMMUNISM("Communism","$government_Communism;"),
+    CONFEDERACY("Confederacy","$government_Confederacy;"),
+    COOPERATIVE("Cooperative","$government_Cooperative;"),
+    CORPORATE("Corporate","$government_Corporate;"),
+    DEMOCRACY("Democracy","$government_Democracy;"),
+    DICTATORSHIP("Dictatorship","$government_Dictatorship;"),
+    FEUDAL("Feudal","$government_Feudal;"),
+    IMPERIAL("Imperial","$government_Imperial;"),
+    NONE("None","$government_None;"),
+    PATRONAGE("Patronage","$government_Patronage;"),
+    PRISON_COLONY("Prison Colony","$government_PrisonColony;"),
+    THEOCRACY("Theocracy","$government_Theocracy;"),
+    ENGINEER("Engineer","$government_Engineer;");
 
     private final String label;
     private final String parameterValue;
 
 
-    EBGSGovernment(String label,  String parameterValue){
+    GovernmentTypes(String label, String parameterValue){
         this.label = label;
         this.parameterValue = parameterValue;
     }

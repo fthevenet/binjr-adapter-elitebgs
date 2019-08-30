@@ -16,15 +16,5 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-public class EBGSFactionHistoryV4 {
-   public String _id;
-   public String updated_at;
-  public  String updated_by;
-    public String system;
-    public String system_lower;
-    public String state;
-    public double influence;
-    public EBGSStateV4[] pending_states;
-    public EBGSStateV4[] recovering_states;
-
+public class SystemHistory {
 }

@@ -16,16 +16,26 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
-public enum EBGSAllegiance implements EBGSQueryParameters {
+public enum StateTypes implements QueryParameters {
     ALL("All", null),
-    EMPIRE("Empire", "empire"),
-    FEDERATION("Federation", "federation"),
-    INDEPENDENT("Independent", "independent");
+    BOOM("Boom", "Boom"),
+    BUST("Bust", "Bust"),
+    CIVIL_UNREST("Civil Unrest", "CivilUnrest"),
+    CIVIL_WAR("Civil War", "CivilWar"),
+    ELECTION("Election", "Election"),
+    EXPANSION("Expansion", "Expansion"),
+    FAMINE("Famine", "Famine"),
+    INVESTMENT("Investment", "Investment"),
+    LOCKDOWN("Lockdown", "Lockdown"),
+    NONE("None", "None"),
+    OUTBREAK("Outbreak", "Outbreak"),
+    RETREAT("Retreat", "Retreat"),
+    WAR("War", "War");
 
     private final String label;
     private final String parameterValue;
 
-    EBGSAllegiance(String label, String parameterValue) {
+    StateTypes(String label, String parameterValue) {
         this.label = label;
         this.parameterValue = parameterValue;
     }
@@ -37,13 +47,11 @@ public enum EBGSAllegiance implements EBGSQueryParameters {
 
     @Override
     public String getParameterName() {
-        return PARAM_ALLEGIANCE;
+        return PARAM_STATE;
     }
 
     @Override
     public String getParameterValue() {
         return parameterValue;
     }
-
-
 }

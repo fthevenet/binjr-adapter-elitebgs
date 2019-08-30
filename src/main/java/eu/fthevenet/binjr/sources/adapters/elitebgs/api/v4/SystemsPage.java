@@ -16,8 +16,8 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.EBGSPage;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.AbstractPage;
 
-public class EBGSFactionsPageV4 extends EBGSPage<EBGSFactionsV4> {
+public class SystemsPage extends AbstractPage<Systems> {
 
 }

@@ -16,7 +16,7 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-public class EBGSFactionsV4 {
+public class Factions {
     public  String _id;
     public int __v;
     public int eddb_id;
@@ -27,8 +27,8 @@ public class EBGSFactionsV4 {
     public String allegiance;
     public String home_system_name;
     public boolean is_player_faction;
-    public EBGSFactionPresenceV4[] faction_presence;
-    public EBGSFactionHistoryV4[] history;
+    public FactionPresence[] faction_presence;
+    public FactionHistory[] history;
 
     @Override
     public String toString() {

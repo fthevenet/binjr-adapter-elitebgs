@@ -16,5 +16,7 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-public class EBGSSystemHistoryV4 {
+public class State {
+    public String state;
+    public double trend;
 }

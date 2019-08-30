@@ -22,7 +22,7 @@ import eu.binjr.core.data.exceptions.DecodingDataFromAdapterException;
 import eu.binjr.core.data.timeseries.DoubleTimeSeriesProcessor;
 import eu.binjr.core.data.timeseries.TimeSeriesProcessor;
 import eu.binjr.core.data.workspace.TimeSeriesInfo;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.EBGSFactionsPageV4;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.FactionsPage;
 import javafx.scene.chart.XYChart;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -49,7 +49,7 @@ public class EliteBgsDecoder implements Decoder {
     public Map<TimeSeriesInfo, TimeSeriesProcessor> decode(InputStream in, List<TimeSeriesInfo> seriesNames) throws IOException, DecodingDataFromAdapterException {
         Map<TimeSeriesInfo, TimeSeriesProcessor> map = new HashMap<>();
         try (InputStreamReader reader = new InputStreamReader(in)) {
-            var factionPages = gson.fromJson(reader, EBGSFactionsPageV4.class);
+            var factionPages = gson.fromJson(reader, FactionsPage.class);
             for (var f : factionPages.docs) {
                 for (var info : seriesNames) {
                     var proc = new DoubleTimeSeriesProcessor();

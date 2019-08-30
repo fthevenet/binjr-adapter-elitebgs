@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
+package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.EBGSPage;
-
-public class EBGSSystemsPageV4 extends EBGSPage<EBGSSystemsV4> {
-
+public abstract class AbstractPage<T> {
+    public T[] docs;
+    public int total;
+    public int limit;
+    public int page;
+    public int pages;
 }

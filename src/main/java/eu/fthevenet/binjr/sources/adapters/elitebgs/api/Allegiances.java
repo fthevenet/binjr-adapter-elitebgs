@@ -16,17 +16,17 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
-public enum EBGSSecurity implements EBGSQueryParameters {
+public enum Allegiances implements QueryParameters {
     ALL("All", null),
-    ANARCHY("Anarchy", "$system_security_anarchy;"),
-    LOW("Low Security", "$system_security_low;"),
-    MEDIUM("Medium Security", "$system_security_medium;"),
-    HIGH("High Security", "$system_security_anarchy;");
+    ALLIANCE("Alliance", "alliance"),
+    EMPIRE("Empire", "empire"),
+    FEDERATION("Federation", "federation"),
+    INDEPENDENT("Independent", "independent");
 
     private final String label;
     private final String parameterValue;
 
-    EBGSSecurity(String label, String parameterValue){
+    Allegiances(String label, String parameterValue) {
         this.label = label;
         this.parameterValue = parameterValue;
     }
@@ -36,11 +36,15 @@ public enum EBGSSecurity implements EBGSQueryParameters {
         return this.label;
     }
 
+    @Override
+    public String getParameterName() {
+        return PARAM_ALLEGIANCE;
+    }
+
+    @Override
     public String getParameterValue() {
         return parameterValue;
     }
 
-    public String getParameterName(){
-        return PARAM_SECURITY;
-    }
+
 }

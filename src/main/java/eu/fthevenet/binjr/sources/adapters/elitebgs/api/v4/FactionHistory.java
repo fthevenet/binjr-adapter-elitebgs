@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
+package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-public abstract class EBGSPage<T> {
-    public T[] docs;
-    public int total;
-    public int limit;
-    public int page;
-    public int pages;
+public class FactionHistory {
+   public String _id;
+   public String updated_at;
+  public  String updated_by;
+    public String system;
+    public String system_lower;
+    public String state;
+    public double influence;
+    public State[] pending_states;
+    public State[] recovering_states;
+
 }

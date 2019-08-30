@@ -16,7 +16,7 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4;
 
-public class EBGSSystemPresenceV4 {
+public class SystemPresence {
     public String name;
     public String name_lower;
     public String faction_id;

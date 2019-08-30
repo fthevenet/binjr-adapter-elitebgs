@@ -16,19 +16,28 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
-public enum EBGSEconomy implements EBGSQueryParameters {
+public enum EconomyTypes implements QueryParameters {
     ALL("All", null),
-    ANARCHY("Anarchy","$system_security_anarchy;"),
-    LOW("Low Security", "$system_security_low;"),
-    MEDIUM("Medium Security", "$system_security_medium;"),
-    HIGH("High Security", "$system_security_anarchy;");
+    AGRICULTURE("Agriculture", "$economy_Agri;"),
+    COLONY("Colony", "$economy_Colony;"),
+    EXTRACTION("Extraction", "$economy_Extraction;"),
+    HIGH_TECH("High Tech", "$economy_HighTech;"),
+    INDUSTRIAL("Industrial", "$economy_Industrial;"),
+    MILITARY("Military", "$economy_Military;"),
+    NONe("None", "$economy_None;"),
+    REFINERY("Refinery", "$economy_Refinery;"),
+    SERVICE("Service", "$economy_Service;"),
+    TERRAFORMING("Terraforming", "$economy_Terraforming;"),
+    TOURISM("Tourism", "$economy_Tourism;"),
+    PRISON("Prison", "$economy_Prison;"),
+    DAMAGED("Damaged", "$economy_Damaged;"),
+    RESCUE("Rescue", "$economy_Rescue;"),
+    REPAIR("Repair", "$economy_Repair;");
 
     private final String label;
-
     private final String parameterValue;
 
-
-    EBGSEconomy(String label, String parameterValue){
+    EconomyTypes(String label, String parameterValue) {
         this.label = label;
 
         this.parameterValue = parameterValue;

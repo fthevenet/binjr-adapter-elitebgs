@@ -24,12 +24,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public interface EBGSQueryParameters {
+public interface QueryParameters {
     String PARAM_ID = "id";
     String PARAM_GOVERNMENT = "government";
     String PARAM_SECURITY = "security";
     String PARAM_ALLEGIANCE = "allegiance";
-    String PARAM_ECONOMY = "economy";
+    String PARAM_ECONOMY = "primaryeconomy";
+    String PARAM_STATE = "state";
     String PARAM_TIMEMIN = "timemin";
     String PARAM_TIMEMAX = "timemax";
     String PARAM_PAGE = "page";
@@ -37,13 +38,13 @@ public interface EBGSQueryParameters {
 
 
     /**
-     * A utility function which prunes instances of {@link EBGSQueryParameters} with null or empty values and returns
+     * A utility function which prunes instances of {@link QueryParameters} with null or empty values and returns
      * the others as an array of {@link NameValuePair} instances.
      *
-     * @param params the {@link EBGSQueryParameters} instance to convert as {@link NameValuePair}
+     * @param params the {@link QueryParameters} instance to convert as {@link NameValuePair}
      * @return An array of {@link NameValuePair} instances.
      */
-    static List<NameValuePair> toValuePairArray(Iterable<EBGSQueryParameters> params) {
+    static List<NameValuePair> toValuePairArray(Iterable<QueryParameters> params) {
         List<NameValuePair> paramList = new ArrayList<>();
         for (var p : params) {
             if (p.getParameterValue() != null &&
@@ -55,27 +56,27 @@ public interface EBGSQueryParameters {
         return paramList;
     }
 
-    static List<NameValuePair> toValuePairArray(EBGSQueryParameters... params) {
-        return EBGSQueryParameters.toValuePairArray(Arrays.asList(params));
+    static List<NameValuePair> toValuePairArray(QueryParameters... params) {
+        return QueryParameters.toValuePairArray(Arrays.asList(params));
     }
 
-    static EBGSQueryParameters id(String value) {
+    static QueryParameters id(String value) {
         return new BasicParameter(PARAM_ID, value);
     }
 
-    static EBGSQueryParameters beginsWith(String beginsWith) {
+    static QueryParameters beginsWith(String beginsWith) {
         return new BasicParameter(PARAM_BEGINS_WITH, beginsWith);
     }
 
-    static EBGSQueryParameters page(int value) {
+    static QueryParameters page(int value) {
         return new BasicParameter(PARAM_PAGE, Integer.toString(value));
     }
 
-    static EBGSQueryParameters timeMin(Instant value) {
+    static QueryParameters timeMin(Instant value) {
         return new BasicParameter(PARAM_TIMEMIN, Long.toString(value.toEpochMilli()));
     }
 
-    static EBGSQueryParameters timeMax(Instant value) {
+    static QueryParameters timeMax(Instant value) {
         return new BasicParameter(PARAM_TIMEMAX, Long.toString(value.toEpochMilli()));
     }
 
@@ -87,7 +88,7 @@ public interface EBGSQueryParameters {
 
     String getParameterValue();
 
-    class BasicParameter implements EBGSQueryParameters {
+    class BasicParameter implements QueryParameters {
 
         private final String name;
         private final String value;
@@ -106,5 +107,6 @@ public interface EBGSQueryParameters {
         public String getParameterValue() {
             return this.value;
         }
+
     }
 }
