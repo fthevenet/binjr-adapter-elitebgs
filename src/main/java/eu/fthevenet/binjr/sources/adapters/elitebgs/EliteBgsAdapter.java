@@ -93,7 +93,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     @Override
     protected URI craftFetchUri(String path, Instant begin, Instant end) throws DataAdapterException {
         return craftRequestUri(API_FACTIONS,
-                QueryParameters.id(path).toValuePair(),
+                QueryParameters.name(path).toValuePair(),
                 QueryParameters.timeMin(begin).toValuePair(),
                 QueryParameters.timeMax(end).toValuePair());
     }
@@ -228,17 +228,16 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                                        int page, boolean waitForResult) throws DataAdapterException {
         AtomicReference<SystemsPage> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
-                    var pages = gson.fromJson(getRawPageData(FRONTEND_SYSTEMS, beginWith, page), SystemsPage.class);
+                    var pages = gson.fromJson(getRawPageData(API_SYSTEMS, beginWith, page), SystemsPage.class);
                     returnValue.set(pages);
                     return pages;
                 },
                 event -> {
                     SystemsPage t = (SystemsPage) event.getSource().getValue();
-                    Map<String, Systems> m = Arrays.stream(t.docs).collect(Collectors.toMap(o -> o._id, (o -> o)));
-                    for (Systems s : m.values()) {
+                    for (Systems s :t.docs) {
                         var branch = makeBranch(s.name, s._id, tree.getValue().getTreeHierarchy());
                         for (var f : s.factions) {
-                            branch.getInternalChildren().add(makeBranch(f.name, f.faction_id, branch.getValue().getTreeHierarchy()));
+                            branch.getInternalChildren().add(makeBranch(f.name, f.name, branch.getValue().getTreeHierarchy()));
                         }
                         tree.getInternalChildren().add(branch);
                     }
@@ -270,7 +269,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                     for (Factions f : m.values()) {
                         var branch = makeBranch(f.name, f._id, tree.getValue().getTreeHierarchy());
                         for (var s : f.faction_presence) {
-                            branch.getInternalChildren().add(makeBranch(s.system_name, f._id, branch.getValue().getTreeHierarchy()));
+                            branch.getInternalChildren().add(makeBranch(s.system_name, f.name, branch.getValue().getTreeHierarchy()));
                         }
                         tree.getInternalChildren().add(branch);
                     }
