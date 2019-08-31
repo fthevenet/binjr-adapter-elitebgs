@@ -35,6 +35,7 @@ public interface QueryParameters {
     String PARAM_TIMEMAX = "timemax";
     String PARAM_PAGE = "page";
     String PARAM_BEGINS_WITH = "beginsWith";
+    String PARAM_NAME = "name";
 
 
     /**
@@ -58,6 +59,10 @@ public interface QueryParameters {
 
     static List<NameValuePair> toValuePairArray(QueryParameters... params) {
         return QueryParameters.toValuePairArray(Arrays.asList(params));
+    }
+
+    static QueryParameters name(String value) {
+        return new BasicParameter(PARAM_NAME, value);
     }
 
     static QueryParameters id(String value) {

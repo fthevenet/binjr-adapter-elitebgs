@@ -48,10 +48,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -73,7 +70,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         this(getURL());
     }
 
-    public EliteBgsAdapter(QueryParameters... queryFilters) throws CannotInitializeDataAdapterException {
+    public EliteBgsAdapter(Collection<QueryParameters> queryFilters) throws CannotInitializeDataAdapterException {
         this(getURL());
         this.addQueryFilters(queryFilters);
     }
@@ -110,10 +107,10 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
         var root = makeBranch(TITLE, TITLE, "");
         root.getInternalChildren().addAll(
-                //  getPaginatedNodes(root.getValue(), "Systems", "Systems", this::addSystemsPage),
+                  getPaginatedNodes(root.getValue(), "Systems", "Systems", this::addSystemsPage)
                 //  getPaginatedNodes(root.getValue(), "Factions", "Factions", this::addFactionsPage),
-                getSystemsByFactions(root.getValue(), "Union of Juipek Resistance", "59e7d34fd22c775be0ff6108"),
-                getSystemsByFactions(root.getValue(), "Communist Interstellar Union", "59e7be2fd22c775be0feba74")
+              //  getSystemsByFactions(root.getValue(), "Union of Juipek Resistance", "59e7d34fd22c775be0ff6108"),
+               // getSystemsByFactions(root.getValue(), "Communist Interstellar Union", "59e7be2fd22c775be0feba74")
         );
 
         return root;
@@ -134,8 +131,12 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return "[" + TITLE + "]";
     }
 
+    public void addQueryFilters(Collection<QueryParameters> filters) {
+        queryFilters.addAll(filters);
+    }
+
     public void addQueryFilters(QueryParameters... filters) {
-        queryFilters.addAll(Arrays.asList(filters));
+        addQueryFilters(Arrays.asList(filters));
     }
 
     public void clearQueryFilters() {
@@ -302,6 +303,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     private String getRawPageData(String uriPath, String beginWith, int page) throws DataAdapterException {
         var params = QueryParameters.toValuePairArray(QueryParameters.page(page), QueryParameters.beginsWith(beginWith));
+        params.addAll(QueryParameters.toValuePairArray(queryFilters));
         String entityString = doHttpGet(craftRequestUri(uriPath, params), new BasicResponseHandler());
         logger.trace(entityString);
         return entityString;

@@ -24,6 +24,7 @@ import eu.binjr.core.preferences.AppEnvironment;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.*;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
@@ -38,6 +39,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A dialog box that returns a {@link EliteBgsAdapter} built according to user inputs.
@@ -98,7 +100,6 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         dialogPane.setContent(vBox);
         this.setDialogPane(dialogPane);
 
-
         Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
         Platform.runLater(browsingModeChoiceBox::requestFocus);
 
@@ -154,7 +155,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
      * @throws DataAdapterException if the provided parameters are invalid
      */
     private DataAdapter getDataAdapter() throws DataAdapterException {
-        return new EliteBgsAdapter();
+        return new EliteBgsAdapter(filters.stream().map(ObservableValue::getValue).collect(Collectors.toList()));
     }
 
 }
