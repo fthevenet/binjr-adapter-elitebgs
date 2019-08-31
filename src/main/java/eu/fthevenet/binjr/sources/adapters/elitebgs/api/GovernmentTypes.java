@@ -50,12 +50,12 @@ public enum GovernmentTypes implements QueryParameters {
 
 
     @Override
-    public String getParameterName() {
+    public String getName() {
         return PARAM_GOVERNMENT;
     }
 
     @Override
-    public String getParameterValue() {
+    public String getValue() {
         return this.parameterValue;
     }
 }

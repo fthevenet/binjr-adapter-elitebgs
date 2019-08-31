@@ -46,12 +46,12 @@ public enum StateTypes implements QueryParameters {
     }
 
     @Override
-    public String getParameterName() {
+    public String getName() {
         return PARAM_STATE;
     }
 
     @Override
-    public String getParameterValue() {
+    public String getValue() {
         return parameterValue;
     }
 }

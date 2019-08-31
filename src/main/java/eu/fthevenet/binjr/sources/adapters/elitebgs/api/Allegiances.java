@@ -37,12 +37,12 @@ public enum Allegiances implements QueryParameters {
     }
 
     @Override
-    public String getParameterName() {
+    public String getName() {
         return PARAM_ALLEGIANCE;
     }
 
     @Override
-    public String getParameterValue() {
+    public String getValue() {
         return parameterValue;
     }
 

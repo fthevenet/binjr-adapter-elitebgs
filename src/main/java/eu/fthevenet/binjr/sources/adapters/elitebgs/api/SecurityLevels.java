@@ -37,11 +37,11 @@ public enum SecurityLevels implements QueryParameters {
         return this.label;
     }
 
-    public String getParameterValue() {
+    public String getValue() {
         return parameterValue;
     }
 
-    public String getParameterName() {
+    public String getName() {
         return PARAM_SECURITY;
     }
 }

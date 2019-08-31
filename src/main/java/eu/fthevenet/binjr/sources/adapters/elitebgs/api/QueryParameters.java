@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public interface QueryParameters {
+public interface QueryParameters extends NameValuePair {
     String PARAM_ID = "id";
     String PARAM_GOVERNMENT = "government";
     String PARAM_SECURITY = "security";
@@ -45,20 +45,20 @@ public interface QueryParameters {
      * @param params the {@link QueryParameters} instance to convert as {@link NameValuePair}
      * @return An array of {@link NameValuePair} instances.
      */
-    static List<NameValuePair> toValuePairArray(Iterable<QueryParameters> params) {
+    static List<NameValuePair> pruneParameters(Iterable<QueryParameters> params) {
         List<NameValuePair> paramList = new ArrayList<>();
         for (var p : params) {
-            if (p.getParameterValue() != null &&
-                    !p.getParameterValue().isBlank() &&
-                    !p.getParameterValue().equalsIgnoreCase("ALL")) {
-                paramList.add(p.toValuePair());
+            if (p.getValue() != null &&
+                    !p.getValue().isBlank() &&
+                    !p.getValue().equalsIgnoreCase("ALL")) {
+                paramList.add(p);
             }
         }
         return paramList;
     }
 
-    static List<NameValuePair> toValuePairArray(QueryParameters... params) {
-        return QueryParameters.toValuePairArray(Arrays.asList(params));
+    static List<NameValuePair> pruneParameters(QueryParameters... params) {
+        return QueryParameters.pruneParameters(Arrays.asList(params));
     }
 
     static QueryParameters name(String value) {
@@ -85,13 +85,9 @@ public interface QueryParameters {
         return new BasicParameter(PARAM_TIMEMAX, Long.toString(value.toEpochMilli()));
     }
 
-    default NameValuePair toValuePair() {
-        return new BasicNameValuePair(getParameterName(), getParameterValue());
-    }
+    String getName();
 
-    String getParameterName();
-
-    String getParameterValue();
+    String getValue();
 
     class BasicParameter implements QueryParameters {
 
@@ -104,12 +100,12 @@ public interface QueryParameters {
         }
 
         @Override
-        public String getParameterName() {
+        public String getName() {
             return this.name;
         }
 
         @Override
-        public String getParameterValue() {
+        public String getValue() {
             return this.value;
         }
 

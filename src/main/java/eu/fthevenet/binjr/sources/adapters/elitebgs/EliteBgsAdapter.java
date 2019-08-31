@@ -93,9 +93,9 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     @Override
     protected URI craftFetchUri(String path, Instant begin, Instant end) throws DataAdapterException {
         return craftRequestUri(API_FACTIONS,
-                QueryParameters.name(path).toValuePair(),
-                QueryParameters.timeMin(begin).toValuePair(),
-                QueryParameters.timeMax(end).toValuePair());
+                QueryParameters.name(path),
+                QueryParameters.timeMin(begin),
+                QueryParameters.timeMax(end));
     }
 
     @Override
@@ -149,8 +149,8 @@ public class EliteBgsAdapter extends HttpDataAdapter {
 
     private FilterableTreeItem<TimeSeriesBinding> getSystemsByFactions(TimeSeriesBinding parent, String factionName, String factionId) throws DataAdapterException {
         var factionBranch = makeBranch(factionName, factionId, parent.getTreeHierarchy());
-        var factionParams = QueryParameters.toValuePairArray(queryFilters);
-        factionParams.add(QueryParameters.id(factionId).toValuePair());
+        var factionParams = QueryParameters.pruneParameters(queryFilters);
+        factionParams.add(QueryParameters.id(factionId));
         var pages = gson.fromJson(
                 doHttpGet(craftRequestUri(FRONTEND_FACTIONS, factionParams), new BasicResponseHandler()),
                 FactionsPage.class);
@@ -167,7 +167,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                 currentList.add(new BasicNameValuePair(QueryParameters.PARAM_ID, f.faction_presence[i].system_id));
             }
             for (var params : paramPages) {
-                params.addAll(QueryParameters.toValuePairArray(queryFilters));
+                params.addAll(QueryParameters.pruneParameters(queryFilters));
                 AsyncTaskManager.getInstance().submit(() -> {
                             List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
                             var systemsPages = gson.fromJson(
@@ -301,8 +301,8 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     }
 
     private String getRawPageData(String uriPath, String beginWith, int page) throws DataAdapterException {
-        var params = QueryParameters.toValuePairArray(QueryParameters.page(page), QueryParameters.beginsWith(beginWith));
-        params.addAll(QueryParameters.toValuePairArray(queryFilters));
+        var params = QueryParameters.pruneParameters(QueryParameters.page(page), QueryParameters.beginsWith(beginWith));
+        params.addAll(QueryParameters.pruneParameters(queryFilters));
         String entityString = doHttpGet(craftRequestUri(uriPath, params), new BasicResponseHandler());
         logger.trace(entityString);
         return entityString;

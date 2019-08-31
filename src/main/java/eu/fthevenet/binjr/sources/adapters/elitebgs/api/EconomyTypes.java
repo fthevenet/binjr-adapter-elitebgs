@@ -48,11 +48,11 @@ public enum EconomyTypes implements QueryParameters {
         return this.label;
     }
 
-    public String getParameterName() {
+    public String getName() {
         return PARAM_ECONOMY;
     }
 
-    public String getParameterValue() {
+    public String getValue() {
         return parameterValue;
     }
 }
