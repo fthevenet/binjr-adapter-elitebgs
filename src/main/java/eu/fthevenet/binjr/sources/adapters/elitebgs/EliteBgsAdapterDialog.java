@@ -23,6 +23,8 @@ import eu.binjr.core.dialogs.Dialogs;
 import eu.binjr.core.preferences.AppEnvironment;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.*;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -30,10 +32,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -65,23 +64,28 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         this.setTitle("Elite Dangerous BGS");
 
 
-        var browsingModeChoiceBox = new ChoiceBox<>(FXCollections.observableArrayList(FactionBrowsingMode.values()));
-        // filters.add(cb.getSelectionModel().selectedItemProperty());
-        //  hBox.getChildren().addAll(label, cb);
-        browsingModeChoiceBox.getSelectionModel().select(0);
-        VBox.setVgrow(browsingModeChoiceBox, Priority.ALWAYS);
-        browsingModeChoiceBox.setMaxWidth(Double.MAX_VALUE);
-        var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
-        var economyChoiceBox = initChoiceBox("Economy: ", EconomyTypes.values());
-        var allegianceChoiceBox = initChoiceBox("Allegiance: ", Allegiances.values());
-        var governmentChoiceBox = initChoiceBox("Government: ", GovernmentTypes.values());
-        var securityChoiceBox = initChoiceBox("Security: ", SecurityLevels.values());
-
-
         VBox vBox = new VBox();
         vBox.setFillWidth(true);
         vBox.setSpacing(10);
-        vBox.setAlignment(Pos.CENTER);
+        vBox.setAlignment(Pos.TOP_CENTER);
+        var browsingModeChoiceBox = new ChoiceBox<>(FXCollections.observableArrayList(FactionBrowsingMode.values()));
+        browsingModeChoiceBox.getSelectionModel().select(0);
+       // VBox.setVgrow(browsingModeChoiceBox, Priority.SOMETIMES);
+        browsingModeChoiceBox.setMaxWidth(Double.MAX_VALUE);
+
+        var isSystemBinding =  Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_SYSTEM,
+                browsingModeChoiceBox.getSelectionModel().selectedItemProperty());
+
+        var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
+        var economyChoiceBox = initChoiceBox("Economy: ", EconomyTypes.values());
+        economyChoiceBox.visibleProperty().bind(isSystemBinding);
+        economyChoiceBox.managedProperty().bind(isSystemBinding);
+        var allegianceChoiceBox = initChoiceBox("Allegiance: ", Allegiances.values());
+        var governmentChoiceBox = initChoiceBox("Government: ", GovernmentTypes.values());
+        var securityChoiceBox = initChoiceBox("Security: ", SecurityLevels.values());
+        securityChoiceBox.visibleProperty().bind(isSystemBinding);
+        securityChoiceBox.managedProperty().bind(isSystemBinding);
+
         vBox.getChildren().addAll(
                 browsingModeChoiceBox,
                 allegianceChoiceBox,
@@ -89,9 +93,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
                 securityChoiceBox,
                 economyChoiceBox,
                 stateChoiceBox);
-
         VBox.setVgrow(vBox, Priority.ALWAYS);
-
         DialogPane dialogPane = new DialogPane();
         dialogPane.setHeaderText("Minor Factions Influence");
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -99,10 +101,8 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         dialogPane.getGraphic().getStyleClass().addAll("elite-icon", "dialog-icon");
         dialogPane.setContent(vBox);
         this.setDialogPane(dialogPane);
-
         Button okButton = (Button) dialogPane.lookupButton(ButtonType.OK);
         Platform.runLater(browsingModeChoiceBox::requestFocus);
-
         okButton.addEventFilter(ActionEvent.ACTION, ae -> {
             try {
                 result = getDataAdapter();
@@ -140,8 +140,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         filters.add(cb.getSelectionModel().selectedItemProperty());
         hBox.getChildren().addAll(label, cb);
         cb.getSelectionModel().select(0);
-        VBox.setVgrow(cb, Priority.ALWAYS);
-        VBox.setVgrow(hBox, Priority.ALWAYS);
+        HBox.setHgrow(cb, Priority.ALWAYS);
         hBox.setMaxWidth(Double.MAX_VALUE);
         cb.setMaxWidth(Double.MAX_VALUE);
         cb.setPrefWidth(-1);
