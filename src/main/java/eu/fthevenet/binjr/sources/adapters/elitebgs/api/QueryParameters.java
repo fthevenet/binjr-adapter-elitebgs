@@ -17,12 +17,9 @@
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public interface QueryParameters extends NameValuePair {
     String PARAM_ID = "id";
@@ -37,6 +34,22 @@ public interface QueryParameters extends NameValuePair {
     String PARAM_BEGINS_WITH = "beginsWith";
     String PARAM_NAME = "name";
 
+    Set<String> knownParameterNames = new HashSet<>(Arrays.asList(
+            PARAM_ID,
+            PARAM_GOVERNMENT,
+            PARAM_SECURITY,
+            PARAM_ALLEGIANCE,
+            PARAM_ECONOMY,
+            PARAM_STATE,
+            PARAM_TIMEMIN,
+            PARAM_TIMEMAX,
+            PARAM_BEGINS_WITH,
+            PARAM_NAME
+    ));
+
+    static boolean isParameterNameKnown(String name) {
+        return knownParameterNames.contains(name);
+    }
 
     /**
      * A utility function which prunes instances of {@link QueryParameters} with null or empty values and returns
@@ -45,7 +58,7 @@ public interface QueryParameters extends NameValuePair {
      * @param params the {@link QueryParameters} instance to convert as {@link NameValuePair}
      * @return An array of {@link NameValuePair} instances.
      */
-    static List<NameValuePair> pruneParameters(Iterable<QueryParameters> params) {
+    static List<NameValuePair> pruneParameters(Iterable<NameValuePair> params) {
         List<NameValuePair> paramList = new ArrayList<>();
         for (var p : params) {
             if (p.getValue() != null &&
@@ -57,8 +70,15 @@ public interface QueryParameters extends NameValuePair {
         return paramList;
     }
 
-    static List<NameValuePair> pruneParameters(QueryParameters... params) {
+    static List<NameValuePair> pruneParameters(NameValuePair... params) {
         return QueryParameters.pruneParameters(Arrays.asList(params));
+    }
+
+    static QueryParameters of(String name, String value) {
+        if (!isParameterNameKnown(name)) {
+            throw new IllegalArgumentException("Unknown parameter name: " + name);
+        }
+        return new BasicParameter(name, value);
     }
 
     static QueryParameters name(String value) {
@@ -109,5 +129,9 @@ public interface QueryParameters extends NameValuePair {
             return this.value;
         }
 
+        @Override
+        public String toString() {
+            return value;
+        }
     }
 }
