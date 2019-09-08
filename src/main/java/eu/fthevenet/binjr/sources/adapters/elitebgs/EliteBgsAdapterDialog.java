@@ -24,7 +24,6 @@ import eu.binjr.core.preferences.AppEnvironment;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.*;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -35,7 +34,11 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import org.apache.http.NameValuePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,6 +54,7 @@ import java.util.stream.Collectors;
 public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private static final Logger logger = LogManager.getLogger(EliteBgsAdapterDialog.class);
     private static final String BINJR_SOURCES = "binjr/sources";
+    private final TextField factionNameField;
     private DataAdapter result = null;
     private List<ReadOnlyProperty<QueryParameters>> filters = new ArrayList<>();
     private Property<FactionBrowsingMode> browsingMode = new SimpleObjectProperty<>();
@@ -76,21 +80,20 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         var browsingModeChoiceBox = new ChoiceBox<>(FXCollections.observableArrayList(FactionBrowsingMode.values()));
         browsingModeChoiceBox.getSelectionModel().select(0);
         browsingMode.bind(browsingModeChoiceBox.valueProperty());
-       // VBox.setVgrow(browsingModeChoiceBox, Priority.SOMETIMES);
         browsingModeChoiceBox.setMaxWidth(Double.MAX_VALUE);
 
         var isLookupBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.LOOKUP,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
-        var isSystemBinding =  Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_SYSTEM,
+        var isSystemBinding = Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_SYSTEM,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty());
 
-        var factionName = new TextField();
-        factionName.setPromptText("Enter a faction's name");
-        HBox.setHgrow(factionName, Priority.SOMETIMES);
+        factionNameField = new TextField();
+        factionNameField.setPromptText("Enter a faction's name");
+        HBox.setHgrow(factionNameField, Priority.SOMETIMES);
 
-        factionName.setMaxWidth(Double.MAX_VALUE);
-        factionName.visibleProperty().bind(isLookupBinding);
-        factionName.managedProperty().bind(factionName.visibleProperty());
+        factionNameField.setMaxWidth(Double.MAX_VALUE);
+        factionNameField.visibleProperty().bind(isLookupBinding);
+        factionNameField.managedProperty().bind(factionNameField.visibleProperty());
 
         var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
         stateChoiceBox.visibleProperty().bind(isLookupBinding.not());
@@ -103,10 +106,9 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         var securityChoiceBox = initChoiceBox("Security: ", SecurityLevels.values());
         securityChoiceBox.visibleProperty().bind(isSystemBinding);
 
-
         vBox.getChildren().addAll(
                 browsingModeChoiceBox,
-                factionName,
+                factionNameField,
                 allegianceChoiceBox,
                 governmentChoiceBox,
                 securityChoiceBox,
@@ -152,7 +154,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         HBox hBox = new HBox();
         hBox.setAlignment(Pos.CENTER_LEFT);
         var label = new Label(title);
-        HBox.setMargin(label, new Insets(0,0,0,2));
+        HBox.setMargin(label, new Insets(0, 0, 0, 2));
         label.setPrefWidth(120);
         label.setMinWidth(120);
         label.setMaxWidth(120);
@@ -175,7 +177,11 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
      * @throws DataAdapterException if the provided parameters are invalid
      */
     private DataAdapter getDataAdapter() throws DataAdapterException {
-        return new EliteBgsAdapter(browsingMode.getValue(), filters.stream().map(ObservableValue::getValue).collect(Collectors.toList()));
+        List<NameValuePair> list = filters.stream().map(ObservableValue::getValue).collect(Collectors.toList());
+        if (browsingMode.getValue() == FactionBrowsingMode.LOOKUP) {
+            list.add(QueryParameters.lookupFaction(factionNameField.getText()));
+        }
+        return new EliteBgsAdapter(browsingMode.getValue(), list);
     }
 
 }

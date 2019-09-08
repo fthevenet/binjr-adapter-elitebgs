@@ -41,7 +41,7 @@ description 'Elite Dangerous BGS adapter'
 compileJava.options.encoding = 'UTF-8'
 
 dependencies {
-    compile 'eu.binjr:binjr-core:2.8.0-SNAPSHOT'
+    compile 'eu.binjr:binjr-core:2.8.1'
     compile "org.openjfx:javafx-base:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     compile "org.openjfx:javafx-graphics:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     compile "org.openjfx:javafx-controls:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"

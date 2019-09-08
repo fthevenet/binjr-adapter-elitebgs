@@ -119,7 +119,11 @@ public class EliteBgsAdapter extends HttpDataAdapter {
                 node = getPaginatedNodes(root.getValue(), "By Factions - " + filterString, "Factions", this::addFactionsPage);
                 break;
             case LOOKUP:
-                node = getSystemsByFactions(root.getValue(), "Communist Interstellar Union", "59e7be2fd22c775be0feba74");
+                var factionName = queryFilters.stream()
+                        .filter(q -> q.getName().equals(QueryParameters.PARAM_LOOKUP_FACTION))
+                        .findFirst()
+                        .orElseThrow(() -> new DataAdapterException("No valid faction name for lookup"));
+                node = getSystemsByFactions(root.getValue(), factionName.getValue());
                 break;
         }
         root.getInternalChildren().add(node);
@@ -190,7 +194,7 @@ public class EliteBgsAdapter extends HttpDataAdapter {
         return queryFilters.toArray(NameValuePair[]::new);
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> getSystemsByFactions(TimeSeriesBinding parent, String factionName, String factionId) throws DataAdapterException {
+    private FilterableTreeItem<TimeSeriesBinding> getSystemsByFactions(TimeSeriesBinding parent, String factionName) throws DataAdapterException {
         var factionBranch = makeBranch(factionName, factionName, parent.getTreeHierarchy());
         List<NameValuePair> factionParams = new ArrayList<>(queryFilters);
         factionParams.add(QueryParameters.name(factionName));
