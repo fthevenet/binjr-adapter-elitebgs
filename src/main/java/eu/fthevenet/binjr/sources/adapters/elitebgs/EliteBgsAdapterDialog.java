@@ -87,13 +87,20 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         var isSystemBinding = Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_SYSTEM,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty());
 
+        HBox hBox = new HBox();
+        hBox.setAlignment(Pos.CENTER_LEFT);
+        var label = new Label("Faction Name:");
+        HBox.setMargin(label, new Insets(0, 0, 0, 2));
+        label.setPrefWidth(100);
+        label.setMinWidth(100);
+        label.setMaxWidth(100);
         factionNameField = new TextField();
-        factionNameField.setPromptText("Enter a faction's name");
         HBox.setHgrow(factionNameField, Priority.SOMETIMES);
-
         factionNameField.setMaxWidth(Double.MAX_VALUE);
-        factionNameField.visibleProperty().bind(isLookupBinding);
-        factionNameField.managedProperty().bind(factionNameField.visibleProperty());
+        hBox.visibleProperty().bind(isLookupBinding);
+        hBox.managedProperty().bind(hBox.visibleProperty());
+        hBox.getChildren().addAll(label, factionNameField);
+        hBox.managedProperty().bind(hBox.visibleProperty());
 
         var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
         stateChoiceBox.visibleProperty().bind(isLookupBinding.not());
@@ -108,7 +115,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
 
         vBox.getChildren().addAll(
                 browsingModeChoiceBox,
-                factionNameField,
+                hBox,
                 allegianceChoiceBox,
                 governmentChoiceBox,
                 securityChoiceBox,
@@ -155,9 +162,9 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         hBox.setAlignment(Pos.CENTER_LEFT);
         var label = new Label(title);
         HBox.setMargin(label, new Insets(0, 0, 0, 2));
-        label.setPrefWidth(120);
-        label.setMinWidth(120);
-        label.setMaxWidth(120);
+        label.setPrefWidth(100);
+        label.setMinWidth(100);
+        label.setMaxWidth(100);
         var cb = new ChoiceBox<>(FXCollections.observableArrayList(values));
         filters.add(cb.getSelectionModel().selectedItemProperty());
         hBox.getChildren().addAll(label, cb);

@@ -85,10 +85,16 @@ public interface QueryParameters extends NameValuePair {
         return new BasicParameter(name, value);
     }
 
+    static Optional<QueryParameters> attempt(String name, String value) {
+        if (!isParameterNameKnown(name)) {
+            return Optional.empty();
+        }
+        return Optional.of(new BasicParameter(name, value));
+    }
+
     static QueryParameters lookupFaction(String value) {
         return new BasicParameter(PARAM_LOOKUP_FACTION, value);
     }
-
 
     static QueryParameters name(String value) {
         return new BasicParameter(PARAM_NAME, value);
