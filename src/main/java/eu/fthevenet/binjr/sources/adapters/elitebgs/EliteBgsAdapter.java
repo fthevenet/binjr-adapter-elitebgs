@@ -24,7 +24,6 @@ import eu.binjr.core.data.async.AsyncTaskManager;
 import eu.binjr.core.data.codec.Decoder;
 import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
-import eu.binjr.core.data.exceptions.SourceCommunicationException;
 import eu.binjr.core.data.workspace.ChartType;
 import eu.binjr.core.data.workspace.UnitPrefixes;
 import eu.binjr.core.dialogs.Dialogs;
@@ -38,6 +37,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import org.apache.http.NameValuePair;
 import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.fx.ui.controls.tree.FilterableTreeItem;
@@ -67,50 +67,6 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     private final List<NameValuePair> queryFilters = new ArrayList<>();
     private FactionBrowsingMode browsingMode;
 
-    @Override
-    public Collection<String> suggestFactionName(String beginsWith) throws DataAdapterException {
-        if (beginsWith == null || beginsWith.isBlank()){
-            throw new DataAdapterException("beginWith parameter cannot be null or empty");
-        }
-        var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.beginsWith(beginsWith)), new BasicResponseHandler()),
-                FactionsPage.class);
-       var factionNames = new ArrayList<String>();
-        for (Factions f : pages.docs) {
-            factionNames.add(f.name);
-        }
-
-        return factionNames;
-    }
-
-    @Override
-    public boolean factionExists(String factionName) throws DataAdapterException {
-        if (factionName == null || factionName.isBlank()){
-            throw new DataAdapterException("beginWith parameter cannot be null or empty");
-        }
-        var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.name(factionName)), new BasicResponseHandler()),
-                FactionsPage.class);
-        return pages.docs.length > 0;
-    }
-
-    static private class InstanceHolder {
-       static private  final EliteBgsAdapter INSTANCE = EliteBgsAdapter.create();
-    }
-
-
-    static public EdbgsApiHelper getHelper(){
-       return InstanceHolder.INSTANCE;
-    }
-
-    static private EliteBgsAdapter create(){
-        try {
-            return new EliteBgsAdapter();
-        } catch (CannotInitializeDataAdapterException e) {
-            throw new UnsupportedOperationException(e);
-        }
-    }
-
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(FactionBrowsingMode.BROWSE_BY_SYSTEM);
     }
@@ -127,6 +83,18 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         this.browsingMode = browsingMode;
     }
 
+    static public EdbgsApiHelper getHelper() {
+        return InstanceHolder.INSTANCE;
+    }
+
+    static private EliteBgsAdapter create() {
+        try {
+            return new EliteBgsAdapter();
+        } catch (CannotInitializeDataAdapterException e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
+
     private static URL getURL() throws CannotInitializeDataAdapterException {
         try {
             return URI.create(SITE).toURL();
@@ -134,6 +102,33 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
             logger.debug(e::getMessage, e);
             throw new CannotInitializeDataAdapterException(e);
         }
+    }
+
+    @Override
+    public Collection<String> suggestFactionName(String beginsWith) throws DataAdapterException {
+        if (beginsWith == null || beginsWith.isBlank()) {
+            throw new DataAdapterException("beginWith parameter cannot be null or empty");
+        }
+        var pages = gson.fromJson(
+                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.beginsWith(beginsWith)), new BasicResponseHandler()),
+                FactionsPage.class);
+        var factionNames = new ArrayList<String>();
+        for (Factions f : pages.docs) {
+            factionNames.add(f.name);
+        }
+
+        return factionNames;
+    }
+
+    @Override
+    public boolean factionExists(String factionName) throws DataAdapterException {
+        if (factionName == null || factionName.isBlank()) {
+            throw new DataAdapterException("beginWith parameter cannot be null or empty");
+        }
+        var pages = gson.fromJson(
+                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.name(factionName)), new BasicResponseHandler()),
+                FactionsPage.class);
+        return pages.docs.length > 0;
     }
 
     @Override
@@ -151,28 +146,28 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
 
     @Override
     public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
-        var root = makeBranch(TITLE, TITLE, "");
-        String filterString = queryFilters.stream().map(NameValuePair::toString).collect(Collectors.joining(", "));
-        filterString = filterString.isBlank() ? "All" : filterString;
-        FilterableTreeItem<TimeSeriesBinding> node;
+        var root = makeBranch(getSourceName(), TITLE, "");
         switch (browsingMode) {
             default:
             case BROWSE_BY_SYSTEM:
-                node = getPaginatedNodes(root.getValue(), "By Systems - " + filterString, "Systems", this::addSystemsPage);
+                addNodesGroupedByName(root, this::addSystemsPage);
                 break;
             case BROWSE_BY_FACTIONS:
-                node = getPaginatedNodes(root.getValue(), "By Factions - " + filterString, "Factions", this::addFactionsPage);
+                addNodesGroupedByName(root, this::addFactionsPage);
                 break;
             case LOOKUP:
-                var factionName = queryFilters.stream()
-                        .filter(q -> q.getName().equals(QueryParameters.PARAM_LOOKUP_FACTION))
-                        .findFirst()
+                var factionName = getParameter(QueryParameters.PARAM_LOOKUP_FACTION)
                         .orElseThrow(() -> new DataAdapterException("No valid faction name for lookup"));
-                node = getSystemsByFactions(root.getValue(), factionName.getValue());
+                getSystemsByFactions(root, factionName.getValue());
                 break;
         }
-        root.getInternalChildren().add(node);
         return root;
+    }
+
+    private Optional<NameValuePair> getParameter(String parameterName) {
+        return queryFilters.stream()
+                .filter(q -> q.getName().equals(parameterName))
+                .findFirst();
     }
 
     @Override
@@ -211,13 +206,17 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     @Override
     public String getSourceName() {
         StringBuilder sourceName = new StringBuilder("[" + TITLE + "] ");
+        String filterString = queryFilters.stream().map(NameValuePair::toString).collect(Collectors.joining(", "));
+        filterString = filterString.isBlank() ? "All" : filterString;
         switch (browsingMode) {
             case BROWSE_BY_SYSTEM:
+                sourceName.append("By Systems - ").append(filterString);
+                break;
             case BROWSE_BY_FACTIONS:
-                sourceName.append(browsingMode);
+                sourceName.append("By Factions - ").append(filterString);
                 break;
             case LOOKUP:
-                sourceName.append("Faction");
+                sourceName.append(getParameter(QueryParameters.PARAM_LOOKUP_FACTION).orElse(new BasicNameValuePair("", "")).getValue());
                 break;
         }
         return sourceName.toString();
@@ -239,10 +238,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         return queryFilters.toArray(NameValuePair[]::new);
     }
 
-
-
-    private FilterableTreeItem<TimeSeriesBinding> getSystemsByFactions(TimeSeriesBinding parent, String factionName) throws DataAdapterException {
-        var factionBranch = makeBranch(factionName, factionName, parent.getTreeHierarchy());
+    private void getSystemsByFactions(FilterableTreeItem<TimeSeriesBinding> parent, String factionName) throws DataAdapterException {
+        //   var root = new ConcurrentLinkedQueue<FilterableTreeItem<TimeSeriesBinding>>();
         List<NameValuePair> factionParams = new ArrayList<>(queryFilters);
         factionParams.add(QueryParameters.name(factionName));
         var pages = gson.fromJson(
@@ -268,7 +265,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                                     doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler()),
                                     SystemsPage.class);
                             for (Systems s : systemsPages.docs) {
-                                var branch = makeBranch(s.name, s._id, factionBranch.getValue().getTreeHierarchy());
+                                var branch = makeBranch(s.name, s._id, parent.getValue().getTreeHierarchy());
                                 for (var sp : s.factions) {
                                     branch.getInternalChildren().add(makeBranch(sp.name, sp.name, branch.getValue().getTreeHierarchy()));
                                 }
@@ -276,27 +273,23 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                             }
                             return nodes;
                         },
-                        event -> factionBranch.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue()),
+                        event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue()),
                         event -> Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException())
                 );
             }
         }
-        return factionBranch;
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> getPaginatedNodes(TimeSeriesBinding parent, String name, String
-            id, AddPageDelegate addPageDelegate) throws DataAdapterException {
-        var tree = makeBranch(name, id, parent.getTreeHierarchy());
+    private void addNodesGroupedByName(FilterableTreeItem<TimeSeriesBinding> parent, AddPageDelegate addPageDelegate) throws DataAdapterException {
         String alphabet = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         for (int i = 0; i < alphabet.length(); i++) {
             String letter = String.valueOf(alphabet.charAt(i));
-            var newBranch = makeBranch(letter, letter, tree.getValue().getTreeHierarchy());
+            var newBranch = makeBranch(letter, letter, parent.getValue().getTreeHierarchy());
             // add a dummy node so that the branch can be expanded
             newBranch.getInternalChildren().add(new FilterableTreeItem<>(null));
             newBranch.expandedProperty().addListener(new ExpandListener(newBranch, letter, addPageDelegate));
-            tree.getInternalChildren().add(newBranch);
+            parent.getInternalChildren().add(newBranch);
         }
-        return tree;
     }
 
     private void addAllPages(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, AddPageDelegate
@@ -406,6 +399,10 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     @FunctionalInterface
     private interface AddPageDelegate {
         AbstractPage<?> addSinglePage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
+    }
+
+    static private class InstanceHolder {
+        static private final EliteBgsAdapter INSTANCE = EliteBgsAdapter.create();
     }
 
     private class ExpandListener implements ChangeListener<Boolean> {

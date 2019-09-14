@@ -114,7 +114,6 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
             return Collections.emptyList();
         });
 
-
         var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
         stateChoiceBox.visibleProperty().bind(isLookupBinding.not());
         var economyChoiceBox = initChoiceBox("Economy: ", EconomyTypes.values());
@@ -192,7 +191,6 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         hBox.managedProperty().bind(hBox.visibleProperty());
         return hBox;
     }
-
 
     /**
      * Returns an instance of {@link EliteBgsAdapter}
