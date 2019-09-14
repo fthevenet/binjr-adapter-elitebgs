@@ -24,6 +24,7 @@ import eu.binjr.core.data.async.AsyncTaskManager;
 import eu.binjr.core.data.codec.Decoder;
 import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
+import eu.binjr.core.data.exceptions.SourceCommunicationException;
 import eu.binjr.core.data.workspace.ChartType;
 import eu.binjr.core.data.workspace.UnitPrefixes;
 import eu.binjr.core.dialogs.Dialogs;
@@ -53,7 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-public class EliteBgsAdapter extends HttpDataAdapter {
+public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     private static final Logger logger = LogManager.getLogger(EliteBgsAdapter.class);
     private static final String SITE = "https://elitebgs.app";
     private static final String API_FACTIONS = "/api/ebgs/v4/factions";
@@ -65,6 +66,50 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     private final Gson gson;
     private final List<NameValuePair> queryFilters = new ArrayList<>();
     private FactionBrowsingMode browsingMode;
+
+    @Override
+    public Collection<String> suggestFactionName(String beginsWith) throws DataAdapterException {
+        if (beginsWith == null || beginsWith.isBlank()){
+            throw new DataAdapterException("beginWith parameter cannot be null or empty");
+        }
+        var pages = gson.fromJson(
+                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.beginsWith(beginsWith)), new BasicResponseHandler()),
+                FactionsPage.class);
+       var factionNames = new ArrayList<String>();
+        for (Factions f : pages.docs) {
+            factionNames.add(f.name);
+        }
+
+        return factionNames;
+    }
+
+    @Override
+    public boolean factionExists(String factionName) throws DataAdapterException {
+        if (factionName == null || factionName.isBlank()){
+            throw new DataAdapterException("beginWith parameter cannot be null or empty");
+        }
+        var pages = gson.fromJson(
+                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.name(factionName)), new BasicResponseHandler()),
+                FactionsPage.class);
+        return pages.docs.length > 0;
+    }
+
+    static private class InstanceHolder {
+       static private  final EliteBgsAdapter INSTANCE = EliteBgsAdapter.create();
+    }
+
+
+    static public EdbgsApiHelper getHelper(){
+       return InstanceHolder.INSTANCE;
+    }
+
+    static private EliteBgsAdapter create(){
+        try {
+            return new EliteBgsAdapter();
+        } catch (CannotInitializeDataAdapterException e) {
+            throw new UnsupportedOperationException(e);
+        }
+    }
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(FactionBrowsingMode.BROWSE_BY_SYSTEM);
@@ -193,6 +238,8 @@ public class EliteBgsAdapter extends HttpDataAdapter {
     public NameValuePair[] getFilters() {
         return queryFilters.toArray(NameValuePair[]::new);
     }
+
+
 
     private FilterableTreeItem<TimeSeriesBinding> getSystemsByFactions(TimeSeriesBinding parent, String factionName) throws DataAdapterException {
         var factionBranch = makeBranch(factionName, factionName, parent.getTreeHierarchy());

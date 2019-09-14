@@ -41,8 +41,10 @@ import javafx.scene.layout.VBox;
 import org.apache.http.NameValuePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.controlsfx.control.textfield.TextFields;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -101,6 +103,17 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         hBox.managedProperty().bind(hBox.visibleProperty());
         hBox.getChildren().addAll(label, factionNameField);
         hBox.managedProperty().bind(hBox.visibleProperty());
+        TextFields.bindAutoCompletion(factionNameField, param -> {
+            if (param.getUserText() != null && !param.getUserText().isBlank()) {
+                try {
+                    return EliteBgsAdapter.getHelper().suggestFactionName(param.getUserText());
+                } catch (DataAdapterException e) {
+                    Dialogs.notifyException("Error retrieving faction name suggestions", e, owner);
+                }
+            }
+            return Collections.emptyList();
+        });
+
 
         var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
         stateChoiceBox.visibleProperty().bind(isLookupBinding.not());
@@ -134,6 +147,9 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         okButton.addEventFilter(ActionEvent.ACTION, ae -> {
             try {
                 result = getDataAdapter();
+            }catch (NoSuchFactionException e){
+                Dialogs.notifyError(e.getMessage(), e, Pos.CENTER, browsingModeChoiceBox);
+                ae.consume();
             } catch (CannotInitializeDataAdapterException e) {
                 Dialogs.notifyError("Error initializing adapter to source", e, Pos.CENTER, browsingModeChoiceBox);
                 ae.consume();
@@ -177,6 +193,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         return hBox;
     }
 
+
     /**
      * Returns an instance of {@link EliteBgsAdapter}
      *
@@ -186,6 +203,9 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private DataAdapter getDataAdapter() throws DataAdapterException {
         List<NameValuePair> list = filters.stream().map(ObservableValue::getValue).collect(Collectors.toList());
         if (browsingMode.getValue() == FactionBrowsingMode.LOOKUP) {
+            if (!EliteBgsAdapter.getHelper().factionExists(factionNameField.getText())) {
+                throw new NoSuchFactionException(factionNameField.getText());
+            }
             list.add(QueryParameters.lookupFaction(factionNameField.getText()));
         }
         return new EliteBgsAdapter(browsingMode.getValue(), list);

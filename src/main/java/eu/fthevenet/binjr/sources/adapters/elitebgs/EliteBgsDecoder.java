@@ -46,7 +46,8 @@ public class EliteBgsDecoder implements Decoder {
     }
 
     @Override
-    public Map<TimeSeriesInfo, TimeSeriesProcessor> decode(InputStream in, List<TimeSeriesInfo> seriesNames) throws IOException, DecodingDataFromAdapterException {
+    public Map<TimeSeriesInfo, TimeSeriesProcessor> decode(InputStream in, List<TimeSeriesInfo> seriesNames)
+            throws IOException, DecodingDataFromAdapterException {
         Map<TimeSeriesInfo, TimeSeriesProcessor> map = new HashMap<>();
         try (InputStreamReader reader = new InputStreamReader(in)) {
             var factionPages = gson.fromJson(reader, FactionsPage.class);
@@ -55,7 +56,7 @@ public class EliteBgsDecoder implements Decoder {
                     var proc = new DoubleTimeSeriesProcessor();
                     Path hierarchy = Paths.get(info.getBinding().getTreeHierarchy());
                     String parentSystem = hierarchy.getFileName().toString();
-                    if ( parentSystem.equalsIgnoreCase(f.name)) {
+                    if (parentSystem.equalsIgnoreCase(f.name)) {
                         parentSystem = hierarchy.getParent().getFileName().toString();
                     }
                     if (logger.isTraceEnabled()) {
@@ -63,7 +64,9 @@ public class EliteBgsDecoder implements Decoder {
                     }
                     for (var h : f.history) {
                         if (parentSystem.equalsIgnoreCase(h.system)) {
-                            proc.addSample(new XYChart.Data<>(ZonedDateTime.parse(h.updated_at), h.influence * 100));
+                            proc.addSample(new XYChart.Data<>(
+                                    ZonedDateTime.parse(h.updated_at),
+                                    Double.isNaN(h.influence) ? 0.0 : h.influence * 100));
                         }
                     }
                     map.put(info, proc);
