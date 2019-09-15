@@ -86,6 +86,8 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
 
         var isLookupBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.LOOKUP,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
+        var isFactionBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_FACTIONS,
+                browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
         var isSystemBinding = Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_SYSTEM,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty());
 
@@ -115,13 +117,15 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         });
 
         var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
-        stateChoiceBox.visibleProperty().bind(isLookupBinding.not());
+        stateChoiceBox.visibleProperty().bind(isFactionBinding.or(isSystemBinding));
         var economyChoiceBox = initChoiceBox("Economy: ", EconomyTypes.values());
         economyChoiceBox.visibleProperty().bind(isSystemBinding);
         var allegianceChoiceBox = initChoiceBox("Allegiance: ", Allegiances.values());
-        allegianceChoiceBox.visibleProperty().bind(isLookupBinding.not());
-        var governmentChoiceBox = initChoiceBox("Government: ", GovernmentTypes.values());
-        governmentChoiceBox.visibleProperty().bind(isLookupBinding.not());
+        allegianceChoiceBox.visibleProperty().bind(isFactionBinding.or(isSystemBinding));
+        var governmentChoiceBox = initChoiceBox("Government: ", SystemGovernmentTypes.values());
+        governmentChoiceBox.visibleProperty().bind(isSystemBinding);
+        var factionGovernmentChoiceBox = initChoiceBox("Government: ", FactionGovernmentTypes.values());
+        factionGovernmentChoiceBox.visibleProperty().bind(isFactionBinding);
         var securityChoiceBox = initChoiceBox("Security: ", SecurityLevels.values());
         securityChoiceBox.visibleProperty().bind(isSystemBinding);
 
@@ -130,6 +134,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
                 hBox,
                 allegianceChoiceBox,
                 governmentChoiceBox,
+                factionGovernmentChoiceBox,
                 securityChoiceBox,
                 economyChoiceBox,
                 stateChoiceBox);

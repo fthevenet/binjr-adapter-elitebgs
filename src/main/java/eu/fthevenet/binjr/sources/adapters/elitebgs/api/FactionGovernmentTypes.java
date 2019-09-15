@@ -16,28 +16,28 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
-public enum GovernmentTypes implements QueryParameters {
+public enum FactionGovernmentTypes implements QueryParameters {
     ALL("All", null),
-    ANARCHY("Anarchy","$government_Anarchy;"),
-    COMMUNISM("Communism","$government_Communism;"),
-    CONFEDERACY("Confederacy","$government_Confederacy;"),
-    COOPERATIVE("Cooperative","$government_Cooperative;"),
-    CORPORATE("Corporate","$government_Corporate;"),
-    DEMOCRACY("Democracy","$government_Democracy;"),
-    DICTATORSHIP("Dictatorship","$government_Dictatorship;"),
-    FEUDAL("Feudal","$government_Feudal;"),
-    IMPERIAL("Imperial","$government_Imperial;"),
-    NONE("None","$government_None;"),
-    PATRONAGE("Patronage","$government_Patronage;"),
-    PRISON_COLONY("Prison Colony","$government_PrisonColony;"),
-    THEOCRACY("Theocracy","$government_Theocracy;"),
-    ENGINEER("Engineer","$government_Engineer;");
+    ANARCHY("Anarchy","Anarchy"),
+    COMMUNISM("Communism","Communism"),
+    CONFEDERACY("Confederacy","Confederacy"),
+    COOPERATIVE("Cooperative","Cooperative"),
+    CORPORATE("Corporate","Corporate"),
+    DEMOCRACY("Democracy","Democracy"),
+    DICTATORSHIP("Dictatorship","Dictatorship"),
+    FEUDAL("Feudal","Feudal"),
+    IMPERIAL("Imperial","Imperial"),
+    NONE("None","None"),
+    PATRONAGE("Patronage","Patronage"),
+    PRISON_COLONY("Prison Colony","PrisonColony"),
+    THEOCRACY("Theocracy","Theocracy"),
+    ENGINEER("Engineer","Engineer");
 
     private final String label;
     private final String parameterValue;
 
 
-    GovernmentTypes(String label, String parameterValue){
+    FactionGovernmentTypes(String label, String parameterValue){
         this.label = label;
         this.parameterValue = parameterValue;
     }
