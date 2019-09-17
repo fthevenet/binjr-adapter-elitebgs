@@ -62,11 +62,20 @@ public class EliteBgsDecoder implements Decoder {
                     if (logger.isTraceEnabled()) {
                         logger.trace("Parent system for faction " + f.name + ": " + parentSystem);
                     }
+                    // Add influence values from history
                     for (var h : f.history) {
                         if (parentSystem.equalsIgnoreCase(h.system)) {
                             proc.addSample(new XYChart.Data<>(
                                     ZonedDateTime.parse(h.updated_at),
                                     Double.isNaN(h.influence) ? 0.0 : h.influence * 100));
+                        }
+                    }
+                    // Add current influence value
+                    for (var c : f.faction_presence) {
+                        if (parentSystem.equalsIgnoreCase(c.system_name)) {
+                            proc.addSample(new XYChart.Data<>(
+                                    ZonedDateTime.parse(c.updated_at),
+                                    Double.isNaN(c.influence) ? 0.0 : c.influence * 100));
                         }
                     }
                     map.put(info, proc);
