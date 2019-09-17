@@ -175,6 +175,10 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         return Duration.of(7, ChronoUnit.DAYS);
     }
 
+    public boolean isSortingRequired(){
+        return true;
+    }
+
     private Optional<NameValuePair> getParameter(String parameterName) {
         return queryFilters.stream()
                 .filter(q -> q.getName().equals(parameterName))
