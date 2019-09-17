@@ -46,8 +46,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -162,6 +165,14 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                 break;
         }
         return root;
+    }
+
+    public Duration getFetchReadAheadDuration(ZonedDateTime dateTime) {
+        return Duration.of(7, ChronoUnit.DAYS);
+    }
+
+    public Duration getFetchReadBehindDuration(ZonedDateTime dateTime) {
+        return Duration.of(7, ChronoUnit.DAYS);
     }
 
     private Optional<NameValuePair> getParameter(String parameterName) {
