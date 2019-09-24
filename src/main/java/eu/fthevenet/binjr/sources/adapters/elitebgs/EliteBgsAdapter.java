@@ -18,6 +18,7 @@ package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import com.google.gson.Gson;
 import eu.binjr.common.logging.Profiler;
+import eu.binjr.common.preferences.Preference;
 import eu.binjr.core.data.adapters.HttpDataAdapter;
 import eu.binjr.core.data.adapters.TimeSeriesBinding;
 import eu.binjr.core.data.async.AsyncTaskManager;
@@ -69,6 +70,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     private final Gson gson;
     private final List<NameValuePair> queryFilters = new ArrayList<>();
     private FactionBrowsingMode browsingMode;
+    private final Preference<Number> fetchReadAheadDays;
+    private final Preference<Number> fetchReadBehindDays;
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(FactionBrowsingMode.BROWSE_BY_SYSTEM);
@@ -84,6 +87,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         this.eliteBgsDecoder = new EliteBgsDecoder();
         gson = new Gson();
         this.browsingMode = browsingMode;
+        fetchReadBehindDays = getAdapterInfo().getPreferences().integerPreference("fetchReadBehindDays", 10);
+        fetchReadAheadDays = getAdapterInfo().getPreferences().integerPreference("fetchReadAheadDays", 10);
     }
 
     static public EdbgsApiHelper getHelper() {
@@ -138,8 +143,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     protected URI craftFetchUri(String path, Instant begin, Instant end) throws DataAdapterException {
         return craftRequestUri(API_FACTIONS,
                 QueryParameters.name(path),
-                QueryParameters.timeMin(begin),
-                QueryParameters.timeMax(end));
+                QueryParameters.timeMin(begin.minus( Duration.ofDays(fetchReadBehindDays.get().longValue()))),
+                QueryParameters.timeMax(end.plus(Duration.ofDays(fetchReadAheadDays.get().longValue()))));
     }
 
     @Override
@@ -165,16 +170,6 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                 break;
         }
         return root;
-    }
-
-    @Override
-    public Duration getFetchReadAheadDuration(ZonedDateTime dateTime) {
-        return Duration.of(7, ChronoUnit.DAYS);
-    }
-
-    @Override
-    public Duration getFetchReadBehindDuration(ZonedDateTime dateTime) {
-        return Duration.of(7, ChronoUnit.DAYS);
     }
 
     @Override
