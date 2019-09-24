@@ -72,8 +72,6 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
             this.initOwner(Dialogs.getStage(owner));
         }
         this.setTitle("Elite Dangerous BGS");
-
-
         VBox vBox = new VBox();
         vBox.setPrefWidth(350);
         vBox.setFillWidth(true);

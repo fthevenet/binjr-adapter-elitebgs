@@ -167,15 +167,18 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         return root;
     }
 
+    @Override
     public Duration getFetchReadAheadDuration(ZonedDateTime dateTime) {
         return Duration.of(7, ChronoUnit.DAYS);
     }
 
+    @Override
     public Duration getFetchReadBehindDuration(ZonedDateTime dateTime) {
         return Duration.of(7, ChronoUnit.DAYS);
     }
 
-    public boolean isSortingRequired(){
+    @Override
+    public boolean isSortingRequired() {
         return true;
     }
 
@@ -254,7 +257,6 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     }
 
     private void getSystemsByFactions(FilterableTreeItem<TimeSeriesBinding> parent, String factionName) throws DataAdapterException {
-        //   var root = new ConcurrentLinkedQueue<FilterableTreeItem<TimeSeriesBinding>>();
         List<NameValuePair> factionParams = new ArrayList<>(queryFilters);
         factionParams.add(QueryParameters.name(factionName));
         var pages = gson.fromJson(
@@ -295,7 +297,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         }
     }
 
-    private void addNodesGroupedByName(FilterableTreeItem<TimeSeriesBinding> parent, AddPageDelegate addPageDelegate) throws DataAdapterException {
+    private void addNodesGroupedByName(FilterableTreeItem<TimeSeriesBinding> parent, AddPageDelegate addPageDelegate) {
         String alphabet = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         for (int i = 0; i < alphabet.length(); i++) {
             String letter = String.valueOf(alphabet.charAt(i));
@@ -311,7 +313,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
             pageDelegate) throws DataAdapterException {
         AtomicInteger nbPages = new AtomicInteger(0);
         AtomicInteger nbHits = new AtomicInteger(0);
-        try (var p = Profiler.start(() -> "Retrieving " + nbHits.get() + " elements starting with '" + beginWith + "' (" + nbPages.get() + " pages)", logger::trace)) {
+        try (var p = Profiler.start(() -> "Retrieving " + nbHits.get() + " elements starting with '"
+                + beginWith + "' (" + nbPages.get() + " pages)", logger::trace)) {
             AbstractPage<?> res = pageDelegate.addSinglePage(tree, beginWith, 1, true);
             if (res != null) {
                 logger.info("pages=" + res.pages);
@@ -345,7 +348,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                     }
                 },
                 event -> {
-                    Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException());
+                    Dialogs.notifyException("An error occurred while retrieving tree view from source",
+                            event.getSource().getException());
                 });
         if (waitForResult) {
             try {
@@ -437,7 +441,6 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
             if (newValue) {
                 try {
-                    // onExpandAction.apply(newBranch, beginWith);
                     addAllPages(newBranch, beginWith, addPageDelegate);
                     //remove dummy node
                     newBranch.getInternalChildren().remove(0);
