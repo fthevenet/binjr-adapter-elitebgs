@@ -16,11 +16,13 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
+import eu.binjr.common.preferences.MostRecentlyUsedList;
 import eu.binjr.core.data.adapters.DataAdapter;
 import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
 import eu.binjr.core.dialogs.Dialogs;
 import eu.binjr.core.preferences.AppEnvironment;
+import eu.binjr.core.preferences.UserHistory;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.*;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
@@ -56,11 +58,11 @@ import java.util.stream.Collectors;
 public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private static final Logger logger = LogManager.getLogger(EliteBgsAdapterDialog.class);
     private static final String BINJR_SOURCES = "binjr/sources";
-    private final TextField factionNameField;
+    private final ComboBox<String> factionNameField;
+    private final MostRecentlyUsedList<String> mostRecentFaction = UserHistory.getInstance().stringMostRecentlyUsedList("mostRecentFactions", 20);
     private DataAdapter result = null;
     private List<ReadOnlyProperty<QueryParameters>> filters = new ArrayList<>();
     private Property<FactionBrowsingMode> browsingMode = new SimpleObjectProperty<>();
-
 
     /**
      * Initializes a new instance of the {@link EliteBgsAdapterDialog} class.
@@ -96,14 +98,16 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         label.setPrefWidth(100);
         label.setMinWidth(100);
         label.setMaxWidth(100);
-        factionNameField = new TextField();
+        factionNameField = new ComboBox<>();
+        factionNameField.setEditable(true);
+        factionNameField.setItems(FXCollections.observableArrayList(mostRecentFaction.getAll()));
         HBox.setHgrow(factionNameField, Priority.SOMETIMES);
         factionNameField.setMaxWidth(Double.MAX_VALUE);
         hBox.visibleProperty().bind(isLookupBinding);
         hBox.managedProperty().bind(hBox.visibleProperty());
         hBox.getChildren().addAll(label, factionNameField);
         hBox.managedProperty().bind(hBox.visibleProperty());
-        TextFields.bindAutoCompletion(factionNameField, param -> {
+        TextFields.bindAutoCompletion(factionNameField.getEditor(), param -> {
             if (param.getUserText() != null && !param.getUserText().isBlank()) {
                 try {
                     return EliteBgsAdapter.getHelper().suggestFactionName(param.getUserText());
@@ -149,7 +153,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         okButton.addEventFilter(ActionEvent.ACTION, ae -> {
             try {
                 result = getDataAdapter();
-            }catch (NoSuchFactionException e){
+            } catch (NoSuchFactionException e) {
                 Dialogs.notifyError(e.getMessage(), e, Pos.CENTER, browsingModeChoiceBox);
                 ae.consume();
             } catch (CannotInitializeDataAdapterException e) {
@@ -204,10 +208,12 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private DataAdapter getDataAdapter() throws DataAdapterException {
         List<NameValuePair> list = filters.stream().map(ObservableValue::getValue).collect(Collectors.toList());
         if (browsingMode.getValue() == FactionBrowsingMode.LOOKUP) {
-            if (!EliteBgsAdapter.getHelper().factionExists(factionNameField.getText())) {
-                throw new NoSuchFactionException(factionNameField.getText());
+            var factionName = factionNameField.getSelectionModel().getSelectedItem();
+            if (!EliteBgsAdapter.getHelper().factionExists(factionName)) {
+                throw new NoSuchFactionException(factionName);
             }
-            list.add(QueryParameters.lookupFaction(factionNameField.getText()));
+            list.add(QueryParameters.lookupFaction(factionName));
+            mostRecentFaction.push(factionName);
         }
         return new EliteBgsAdapter(browsingMode.getValue(), list);
     }
