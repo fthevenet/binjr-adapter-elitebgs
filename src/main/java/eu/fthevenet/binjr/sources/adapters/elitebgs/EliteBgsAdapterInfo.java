@@ -18,6 +18,8 @@ package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import eu.binjr.core.data.adapters.BaseDataAdapterInfo;
 
+import java.util.prefs.Preferences;
+
 public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
 
     public EliteBgsAdapterInfo(){
@@ -27,6 +29,7 @@ public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
                 "Apache-2.0",
                 "https://github.com/fthevenet/binjr-adapter-elitebgs",
                 EliteBgsAdapter.class,
-                EliteBgsAdapterDialog.class);
+                EliteBgsAdapterDialog.class,
+                new EliteBgsAdapterPreferences());
     }
 }

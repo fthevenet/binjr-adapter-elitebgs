@@ -70,8 +70,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     private final Gson gson;
     private final List<NameValuePair> queryFilters = new ArrayList<>();
     private FactionBrowsingMode browsingMode;
-    private final Preference<Number> fetchReadAheadDays;
-    private final Preference<Number> fetchReadBehindDays;
+    private final EliteBgsAdapterPreferences prefs;
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(FactionBrowsingMode.BROWSE_BY_SYSTEM);
@@ -87,8 +86,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         this.eliteBgsDecoder = new EliteBgsDecoder();
         gson = new Gson();
         this.browsingMode = browsingMode;
-        fetchReadBehindDays = getAdapterInfo().getPreferences().integerPreference("fetchReadBehindDays", 10);
-        fetchReadAheadDays = getAdapterInfo().getPreferences().integerPreference("fetchReadAheadDays", 10);
+        this.prefs = (EliteBgsAdapterPreferences) getAdapterInfo().getPreferences();
     }
 
     static public EdbgsApiHelper getHelper() {
@@ -143,8 +141,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     protected URI craftFetchUri(String path, Instant begin, Instant end) throws DataAdapterException {
         return craftRequestUri(API_FACTIONS,
                 QueryParameters.name(path),
-                QueryParameters.timeMin(begin.minus( Duration.ofDays(fetchReadBehindDays.get().longValue()))),
-                QueryParameters.timeMax(end.plus(Duration.ofDays(fetchReadAheadDays.get().longValue()))));
+                QueryParameters.timeMin(begin.minus(Duration.ofDays(prefs.fetchReadBehindDays.get().longValue()))),
+                QueryParameters.timeMax(end.plus(Duration.ofDays(prefs.fetchReadAheadDays.get().longValue()))));
     }
 
     @Override
