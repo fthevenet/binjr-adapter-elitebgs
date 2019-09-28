@@ -29,7 +29,7 @@ ext.IS_64 = OS_ARCH.toLowerCase().contains("64")
 ext.IS_MAC = OS_NAME.contains("mac") || OS_NAME.contains("darwin")
 ext.IS_WINDOWS = OS_NAME.contains("windows")
 ext.IS_LINUX = OS_NAME.contains("linux")
-ext.OPENJFX_VERSION = "12.0.2"
+ext.OPENJFX_VERSION = "13"
 ext.OPENJFX_PLATEFORM_CLASSIFIER = IS_MAC ? 'mac' : IS_WINDOWS ? 'win' : IS_LINUX ? 'linux' : 'unsupported'
 
 group 'eu.fthevenet'
@@ -41,7 +41,7 @@ description 'Elite Dangerous BGS adapter'
 compileJava.options.encoding = 'UTF-8'
 
 dependencies {
-    compile 'eu.binjr:binjr-core:2.9.0-SNAPSHOT'
+    compile 'eu.binjr:binjr-core:2.9.0'
     compile "org.openjfx:javafx-base:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     compile "org.openjfx:javafx-graphics:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     compile "org.openjfx:javafx-controls:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
