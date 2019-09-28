@@ -16,20 +16,15 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
-public enum FactionBrowsingMode {
-    BROWSE_BY_SYSTEM("Browse by Systems"),
-    BROWSE_BY_FACTIONS("Browse by Factions"),
-    FACTION_LOOKUP("Look for a specific faction"),
-    SYSTEM_LOOKUP("Look for a specific system");
+import eu.binjr.core.data.exceptions.DataAdapterException;
 
-    private final String label;
+public class NoSuchSystemException extends DataAdapterException {
 
-    FactionBrowsingMode(String label) {
-        this.label = label;
+    public NoSuchSystemException() {
+        super();
     }
 
-    @Override
-    public String toString() {
-        return this.label;
+    public NoSuchSystemException(String systemName) {
+        super("The system " + systemName + " does not exists");
     }
 }

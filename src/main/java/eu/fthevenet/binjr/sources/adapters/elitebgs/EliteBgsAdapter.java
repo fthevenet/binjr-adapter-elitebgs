@@ -18,7 +18,6 @@ package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import com.google.gson.Gson;
 import eu.binjr.common.logging.Profiler;
-import eu.binjr.common.preferences.Preference;
 import eu.binjr.core.data.adapters.HttpDataAdapter;
 import eu.binjr.core.data.adapters.TimeSeriesBinding;
 import eu.binjr.core.data.async.AsyncTaskManager;
@@ -50,8 +49,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -69,8 +66,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     private final EliteBgsDecoder eliteBgsDecoder;
     private final Gson gson;
     private final List<NameValuePair> queryFilters = new ArrayList<>();
-    private FactionBrowsingMode browsingMode;
     private final EliteBgsAdapterPreferences prefs;
+    private FactionBrowsingMode browsingMode;
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(FactionBrowsingMode.BROWSE_BY_SYSTEM);
@@ -113,7 +110,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     @Override
     public Collection<String> suggestFactionName(String beginsWith) throws DataAdapterException {
         if (beginsWith == null || beginsWith.isBlank()) {
-            throw new DataAdapterException("beginWith parameter cannot be null or empty");
+            throw new DataAdapterException("Please provide a faction name");
         }
         var pages = gson.fromJson(
                 doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.beginsWith(beginsWith)), new BasicResponseHandler()),
@@ -127,13 +124,40 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     }
 
     @Override
+    public Collection<String> suggestSystemName(String beginsWith) throws DataAdapterException {
+        if (beginsWith == null || beginsWith.isBlank()) {
+            throw new DataAdapterException("Please provide a system name");
+        }
+        var pages = gson.fromJson(
+                doHttpGet(craftRequestUri(API_SYSTEMS, QueryParameters.beginsWith(beginsWith)), new BasicResponseHandler()),
+                SystemsPage.class);
+        var systemNames = new ArrayList<String>();
+        for (Systems s : pages.docs) {
+            systemNames.add(s.name);
+        }
+
+        return systemNames;
+    }
+
+    @Override
     public boolean factionExists(String factionName) throws DataAdapterException {
         if (factionName == null || factionName.isBlank()) {
-            throw new DataAdapterException("beginWith parameter cannot be null or empty");
+            throw new DataAdapterException("Please provide a faction name");
         }
         var pages = gson.fromJson(
                 doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.name(factionName)), new BasicResponseHandler()),
                 FactionsPage.class);
+        return pages.docs.length > 0;
+    }
+
+    @Override
+    public boolean systemExists(String systemName) throws DataAdapterException {
+        if (systemName == null || systemName.isBlank()) {
+            throw new DataAdapterException("Please provide a system name");
+        }
+        var pages = gson.fromJson(
+                doHttpGet(craftRequestUri(API_SYSTEMS, QueryParameters.name(systemName)), new BasicResponseHandler()),
+                SystemsPage.class);
         return pages.docs.length > 0;
     }
 
@@ -161,10 +185,15 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
             case BROWSE_BY_FACTIONS:
                 addNodesGroupedByName(root, this::addFactionsPage);
                 break;
-            case LOOKUP:
+            case FACTION_LOOKUP:
                 var factionName = getParameter(QueryParameters.PARAM_LOOKUP_FACTION)
                         .orElseThrow(() -> new DataAdapterException("No valid faction name for lookup"));
                 getSystemsByFactions(root, factionName.getValue());
+                break;
+            case SYSTEM_LOOKUP:
+                var systemName = getParameter(QueryParameters.PARAM_LOOKUP_SYSTEM)
+                        .orElseThrow(() -> new DataAdapterException("No valid system name for lookup"));
+                getSystems(root, systemName.getValue());
                 break;
         }
         return root;
@@ -226,8 +255,11 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
             case BROWSE_BY_FACTIONS:
                 sourceName.append("By Factions - ").append(filterString);
                 break;
-            case LOOKUP:
+            case FACTION_LOOKUP:
                 sourceName.append(getParameter(QueryParameters.PARAM_LOOKUP_FACTION).orElse(new BasicNameValuePair("", "")).getValue());
+                break;
+            case SYSTEM_LOOKUP:
+                sourceName.append(getParameter(QueryParameters.PARAM_LOOKUP_SYSTEM).orElse(new BasicNameValuePair("", "")).getValue());
                 break;
         }
         return sourceName.toString();
@@ -247,6 +279,30 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
 
     public NameValuePair[] getFilters() {
         return queryFilters.toArray(NameValuePair[]::new);
+    }
+
+    private void getSystems(FilterableTreeItem<TimeSeriesBinding> parent, String... systemNames) throws DataAdapterException {
+    for(var systemName: systemNames){
+        List<NameValuePair> params = new ArrayList<>(queryFilters);
+        params.add(QueryParameters.name(systemName));
+        AsyncTaskManager.getInstance().submit(() -> {
+                    List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
+                    var systemsPages = gson.fromJson(
+                            doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler()),
+                            SystemsPage.class);
+                    for (Systems s : systemsPages.docs) {
+                        var branch = makeBranch(s.name, s._id, parent.getValue().getTreeHierarchy());
+                        for (var sp : s.factions) {
+                            branch.getInternalChildren().add(makeBranch(sp.name, sp.name, branch.getValue().getTreeHierarchy()));
+                        }
+                        nodes.add(branch);
+                    }
+                    return nodes;
+                },
+                event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue()),
+                event -> Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException())
+        );
+    }
     }
 
     private void getSystemsByFactions(FilterableTreeItem<TimeSeriesBinding> parent, String factionName) throws DataAdapterException {

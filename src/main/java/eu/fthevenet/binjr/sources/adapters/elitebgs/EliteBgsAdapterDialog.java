@@ -26,6 +26,7 @@ import eu.binjr.core.preferences.UserHistory;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.*;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.Property;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -40,12 +41,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.util.Callback;
 import org.apache.http.NameValuePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,7 +63,11 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private static final Logger logger = LogManager.getLogger(EliteBgsAdapterDialog.class);
     private static final String BINJR_SOURCES = "binjr/sources";
     private final ComboBox<String> factionNameField;
-    private final MostRecentlyUsedList<String> mostRecentFaction = UserHistory.getInstance().stringMostRecentlyUsedList("mostRecentFactions", 20);
+    private final MostRecentlyUsedList<String> mostRecentFactions =
+            UserHistory.getInstance().stringMostRecentlyUsedList("mostRecentFactions", 20);
+    private final ComboBox<String> systemNameField;
+    private final MostRecentlyUsedList<String> mostRecentSystems =
+            UserHistory.getInstance().stringMostRecentlyUsedList("mostRecentSystems", 20);
     private DataAdapter result = null;
     private List<ReadOnlyProperty<QueryParameters>> filters = new ArrayList<>();
     private Property<FactionBrowsingMode> browsingMode = new SimpleObjectProperty<>();
@@ -84,39 +92,14 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         browsingMode.bind(browsingModeChoiceBox.valueProperty());
         browsingModeChoiceBox.setMaxWidth(Double.MAX_VALUE);
 
-        var isLookupBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.LOOKUP,
+        var isLookupSystemBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.SYSTEM_LOOKUP,
+                browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
+        var isLookupFactionBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.FACTION_LOOKUP,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
         var isFactionBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_FACTIONS,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
         var isSystemBinding = Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_SYSTEM,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty());
-
-        HBox hBox = new HBox();
-        hBox.setAlignment(Pos.CENTER_LEFT);
-        var label = new Label("Faction Name:");
-        HBox.setMargin(label, new Insets(0, 0, 0, 2));
-        label.setPrefWidth(100);
-        label.setMinWidth(100);
-        label.setMaxWidth(100);
-        factionNameField = new ComboBox<>();
-        factionNameField.setEditable(true);
-        factionNameField.setItems(FXCollections.observableArrayList(mostRecentFaction.getAll()));
-        HBox.setHgrow(factionNameField, Priority.SOMETIMES);
-        factionNameField.setMaxWidth(Double.MAX_VALUE);
-        hBox.visibleProperty().bind(isLookupBinding);
-        hBox.managedProperty().bind(hBox.visibleProperty());
-        hBox.getChildren().addAll(label, factionNameField);
-        hBox.managedProperty().bind(hBox.visibleProperty());
-        TextFields.bindAutoCompletion(factionNameField.getEditor(), param -> {
-            if (param.getUserText() != null && !param.getUserText().isBlank()) {
-                try {
-                    return EliteBgsAdapter.getHelper().suggestFactionName(param.getUserText());
-                } catch (DataAdapterException e) {
-                    Dialogs.notifyException("Error retrieving faction name suggestions", e, owner);
-                }
-            }
-            return Collections.emptyList();
-        });
 
         var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
         stateChoiceBox.visibleProperty().bind(isFactionBinding.or(isSystemBinding));
@@ -133,13 +116,35 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
 
         vBox.getChildren().addAll(
                 browsingModeChoiceBox,
-                hBox,
                 allegianceChoiceBox,
                 governmentChoiceBox,
                 factionGovernmentChoiceBox,
                 securityChoiceBox,
                 economyChoiceBox,
                 stateChoiceBox);
+
+        this.factionNameField = makeLookupField(vBox, isLookupFactionBinding, "Faction Name:", mostRecentFactions, param -> {
+            if (param.getUserText() != null && !param.getUserText().isBlank()) {
+                try {
+                    return EliteBgsAdapter.getHelper().suggestFactionName(param.getUserText());
+                } catch (DataAdapterException e) {
+                    Dialogs.notifyException("Error retrieving faction name suggestions", e, vBox);
+                }
+            }
+            return Collections.emptyList();
+        });
+
+        this.systemNameField = makeLookupField(vBox, isLookupSystemBinding, "System Name:", mostRecentSystems, param -> {
+            if (param.getUserText() != null && !param.getUserText().isBlank()) {
+                try {
+                    return EliteBgsAdapter.getHelper().suggestSystemName(param.getUserText());
+                } catch (DataAdapterException e) {
+                    Dialogs.notifyException("Error retrieving system name suggestions", e, vBox);
+                }
+            }
+            return Collections.emptyList();
+        });
+
         VBox.setVgrow(vBox, Priority.ALWAYS);
         DialogPane dialogPane = new DialogPane();
         dialogPane.setHeaderText("Minor Factions Influence");
@@ -179,6 +184,33 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         this.setResizable(AppEnvironment.getInstance().isResizableDialogs());
     }
 
+    private ComboBox<String> makeLookupField(VBox parent,
+                                             BooleanBinding isLookupBinding,
+                                             String title,
+                                             MostRecentlyUsedList<String> mru,
+                                             Callback<AutoCompletionBinding.ISuggestionRequest,
+                                                     Collection<String>> suggestCallback) {
+        HBox hBox = new HBox();
+        hBox.setAlignment(Pos.CENTER_LEFT);
+        var label = new Label(title);
+        HBox.setMargin(label, new Insets(0, 0, 0, 2));
+        label.setPrefWidth(100);
+        label.setMinWidth(100);
+        label.setMaxWidth(100);
+        ComboBox<String> comboBox = new ComboBox<>();
+        comboBox.setEditable(true);
+        comboBox.setItems(FXCollections.observableArrayList(mru.getAll()));
+        HBox.setHgrow(comboBox, Priority.SOMETIMES);
+        comboBox.setMaxWidth(Double.MAX_VALUE);
+        hBox.visibleProperty().bind(isLookupBinding);
+        hBox.managedProperty().bind(hBox.visibleProperty());
+        hBox.getChildren().addAll(label, comboBox);
+        hBox.managedProperty().bind(hBox.visibleProperty());
+        TextFields.bindAutoCompletion(comboBox.getEditor(), suggestCallback);
+        parent.getChildren().add(hBox);
+        return comboBox;
+    }
+
     private HBox initChoiceBox(String title, QueryParameters[] values) {
         HBox hBox = new HBox();
         hBox.setAlignment(Pos.CENTER_LEFT);
@@ -207,13 +239,21 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
      */
     private DataAdapter getDataAdapter() throws DataAdapterException {
         List<NameValuePair> list = filters.stream().map(ObservableValue::getValue).collect(Collectors.toList());
-        if (browsingMode.getValue() == FactionBrowsingMode.LOOKUP) {
+        if (browsingMode.getValue() == FactionBrowsingMode.FACTION_LOOKUP) {
             var factionName = factionNameField.getSelectionModel().getSelectedItem();
             if (!EliteBgsAdapter.getHelper().factionExists(factionName)) {
                 throw new NoSuchFactionException(factionName);
             }
             list.add(QueryParameters.lookupFaction(factionName));
-            mostRecentFaction.push(factionName);
+            mostRecentFactions.push(factionName);
+        }
+        if (browsingMode.getValue() == FactionBrowsingMode.SYSTEM_LOOKUP) {
+            var systemName = systemNameField.getSelectionModel().getSelectedItem();
+            if (!EliteBgsAdapter.getHelper().systemExists(systemName)) {
+                throw new NoSuchSystemException(systemName);
+            }
+            list.add(QueryParameters.lookupSystem(systemName));
+            mostRecentSystems.push(systemName);
         }
         return new EliteBgsAdapter(browsingMode.getValue(), list);
     }

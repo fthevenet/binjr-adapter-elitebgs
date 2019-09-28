@@ -24,4 +24,8 @@ public interface EdbgsApiHelper {
     Collection<String> suggestFactionName(String beginsWith) throws DataAdapterException;
 
     boolean factionExists(String factionName) throws DataAdapterException;
+
+    Collection<String> suggestSystemName(String beginsWith) throws DataAdapterException;
+
+    boolean systemExists(String factionName) throws DataAdapterException;
 }

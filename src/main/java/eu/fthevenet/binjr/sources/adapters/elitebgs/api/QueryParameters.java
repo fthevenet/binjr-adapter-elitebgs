@@ -96,6 +96,10 @@ public interface QueryParameters extends NameValuePair {
         return new BasicParameter(PARAM_LOOKUP_FACTION, value);
     }
 
+    static QueryParameters lookupSystem(String value) {
+        return new BasicParameter(PARAM_LOOKUP_SYSTEM, value);
+    }
+
     static QueryParameters name(String value) {
         return new BasicParameter(PARAM_NAME, value);
     }
