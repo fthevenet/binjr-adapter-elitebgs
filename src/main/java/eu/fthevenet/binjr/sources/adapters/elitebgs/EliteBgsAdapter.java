@@ -17,6 +17,7 @@
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import com.google.gson.Gson;
+import eu.binjr.common.javafx.controls.TimeRange;
 import eu.binjr.common.logging.Profiler;
 import eu.binjr.core.data.adapters.HttpDataAdapter;
 import eu.binjr.core.data.adapters.TimeSeriesBinding;
@@ -25,6 +26,7 @@ import eu.binjr.core.data.codec.Decoder;
 import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
 import eu.binjr.core.data.workspace.ChartType;
+import eu.binjr.core.data.workspace.TimeSeriesInfo;
 import eu.binjr.core.data.workspace.UnitPrefixes;
 import eu.binjr.core.dialogs.Dialogs;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.AbstractPage;
@@ -49,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -263,6 +266,12 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                 break;
         }
         return sourceName.toString();
+    }
+
+    @Override
+    public TimeRange getInitialTimeRange(String path, List<TimeSeriesInfo> seriesInfo) throws DataAdapterException {
+        var end = ZonedDateTime.now(getTimeZoneId());
+        return TimeRange.of(end.minusHours(prefs.defaultTimeRangeHours.get().intValue()), end);
     }
 
     public void addQueryFilters(Collection<NameValuePair> filters) {
