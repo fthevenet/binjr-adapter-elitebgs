@@ -1098,7 +1098,6 @@
 }
 
 .combo-box-base {
-
     -fx-border-color: -binjr-control-border-color;
     -fx-background-color: -binjr-button-background-color;
     -fx-border-width: 1;
@@ -1168,7 +1167,7 @@
     visibility: hidden;
 }
 
-.borderless-color-picker .color-palette {
+.color-picker .color-palette {
     -fx-spacing: 0.833333em; /* 10px */
     -fx-background-color: -binjr-pane-background-color;
     -fx-border-color: -binjr-control-border-color;
@@ -1177,12 +1176,12 @@
     -fx-padding: 1em; /* 12 */
 }
 
-.borderless-color-picker .color-palette > .color-picker-grid {
+.color-picker .color-palette > .color-picker-grid {
     -fx-padding: 0.5px;
     -fx-snap-to-pixel: true;
 }
 
-.borderless-color-picker .color-palette > .color-picker-grid > .color-square {
+.color-picker .color-palette > .color-picker-grid > .color-square {
     -fx-background-color: transparent;
     -fx-padding: 0.5px;
 }

@@ -37,9 +37,9 @@ import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.Systems;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.SystemsPage;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.scene.paint.Color;
 import org.apache.http.NameValuePair;
 import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.fx.ui.controls.tree.FilterableTreeItem;
@@ -70,22 +70,22 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     private final Gson gson;
     private final List<NameValuePair> queryFilters = new ArrayList<>();
     private final EliteBgsAdapterPreferences prefs;
-    private FactionBrowsingMode browsingMode;
+    private EliteBgsAdapterParameters parameters;
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
-        this(FactionBrowsingMode.BROWSE_BY_SYSTEM);
+        this(new EliteBgsAdapterParameters());
     }
 
-    public EliteBgsAdapter(FactionBrowsingMode browsingMode, Collection<NameValuePair> queryFilters) throws CannotInitializeDataAdapterException {
-        this(browsingMode);
+    public EliteBgsAdapter(EliteBgsAdapterParameters parameters, Collection<NameValuePair> queryFilters) throws CannotInitializeDataAdapterException {
+        this(parameters);
         this.addQueryFilters(queryFilters);
     }
 
-    public EliteBgsAdapter(FactionBrowsingMode browsingMode) throws CannotInitializeDataAdapterException {
+    public EliteBgsAdapter(EliteBgsAdapterParameters browsingMode) throws CannotInitializeDataAdapterException {
         super(getURL());
         this.eliteBgsDecoder = new EliteBgsDecoder();
         gson = new Gson();
-        this.browsingMode = browsingMode;
+        this.parameters = browsingMode;
         this.prefs = (EliteBgsAdapterPreferences) getAdapterInfo().getPreferences();
     }
 
@@ -180,7 +180,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     @Override
     public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
         var root = makeBranch(getSourceName(), TITLE, "");
-        switch (browsingMode) {
+        switch (parameters.getBrowsingMode()) {
             default:
             case BROWSE_BY_SYSTEM:
                 addNodesGroupedByName(root, this::addSystemsPage);
@@ -189,14 +189,10 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                 addNodesGroupedByName(root, this::addFactionsPage);
                 break;
             case FACTION_LOOKUP:
-                var factionName = getParameter(QueryParameters.PARAM_LOOKUP_FACTION)
-                        .orElseThrow(() -> new DataAdapterException("No valid faction name for lookup"));
-                getSystemsByFactions(root, factionName.getValue());
+                getSystemsByFactions(root, parameters.getLookupValue());
                 break;
             case SYSTEM_LOOKUP:
-                var systemName = getParameter(QueryParameters.PARAM_LOOKUP_SYSTEM)
-                        .orElseThrow(() -> new DataAdapterException("No valid system name for lookup"));
-                getSystems(root, systemName.getValue());
+                getSystems(root, parameters.getLookupValue());
                 break;
         }
         return root;
@@ -216,8 +212,12 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     @Override
     public void loadParams(Map<String, String> params) throws DataAdapterException {
         super.loadParams(params);
-
-        browsingMode = FactionBrowsingMode.valueOf(params.get("browsingMode"));
+        parameters.setBrowsingMode(FactionBrowsingMode.valueOf(params.get("browsingMode")));
+        parameters.setLookupValue(params.get("lookupValue"));
+        var colorString = params.get("selectedColor");
+        if (colorString != null && !colorString.isBlank()) {
+            parameters.setSelectedColor(Color.valueOf(colorString));
+        }
         addQueryFilters(params.entrySet()
                 .stream()
                 .filter(e -> QueryParameters.isParameterNameKnown(e.getKey()))
@@ -228,8 +228,11 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     @Override
     public Map<String, String> getParams() {
         var params = super.getParams();
-        params.put("browsingMode", browsingMode.name());
-
+        params.put("browsingMode", parameters.getBrowsingMode().name());
+        params.put("lookupValue", parameters.getLookupValue());
+        if (parameters.getSelectedColor() != null) {
+            params.put("selectedColor", parameters.getSelectedColor().toString());
+        }
         for (var q : queryFilters) {
             params.put(q.getName(), q.getValue());
         }
@@ -251,7 +254,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         StringBuilder sourceName = new StringBuilder("[" + TITLE + "] ");
         String filterString = queryFilters.stream().map(NameValuePair::toString).collect(Collectors.joining(", "));
         filterString = filterString.isBlank() ? "All" : filterString;
-        switch (browsingMode) {
+        switch (parameters.getBrowsingMode()) {
             case BROWSE_BY_SYSTEM:
                 sourceName.append("By Systems - ").append(filterString);
                 break;
@@ -259,10 +262,8 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                 sourceName.append("By Factions - ").append(filterString);
                 break;
             case FACTION_LOOKUP:
-                sourceName.append(getParameter(QueryParameters.PARAM_LOOKUP_FACTION).orElse(new BasicNameValuePair("", "")).getValue());
-                break;
             case SYSTEM_LOOKUP:
-                sourceName.append(getParameter(QueryParameters.PARAM_LOOKUP_SYSTEM).orElse(new BasicNameValuePair("", "")).getValue());
+                sourceName.append(parameters.getLookupValue());
                 break;
         }
         return sourceName.toString();
@@ -291,27 +292,27 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     }
 
     private void getSystems(FilterableTreeItem<TimeSeriesBinding> parent, String... systemNames) throws DataAdapterException {
-    for(var systemName: systemNames){
-        List<NameValuePair> params = new ArrayList<>(queryFilters);
-        params.add(QueryParameters.name(systemName));
-        AsyncTaskManager.getInstance().submit(() -> {
-                    List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
-                    var systemsPages = gson.fromJson(
-                            doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler()),
-                            SystemsPage.class);
-                    for (Systems s : systemsPages.docs) {
-                        var branch = makeBranch(s.name, s._id, parent.getValue().getTreeHierarchy());
-                        for (var sp : s.factions) {
-                            branch.getInternalChildren().add(makeBranch(sp.name, sp.name, branch.getValue().getTreeHierarchy()));
+        for (var systemName : systemNames) {
+            List<NameValuePair> params = new ArrayList<>(queryFilters);
+            params.add(QueryParameters.name(systemName));
+            AsyncTaskManager.getInstance().submit(() -> {
+                        List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
+                        var systemsPages = gson.fromJson(
+                                doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler()),
+                                SystemsPage.class);
+                        for (Systems s : systemsPages.docs) {
+                            var branch = makeBranch(s.name, s._id, parent.getValue().getTreeHierarchy());
+                            for (var sp : s.factions) {
+                                branch.getInternalChildren().add(makeBranch(sp.name, sp.name, branch.getValue().getTreeHierarchy()));
+                            }
+                            nodes.add(branch);
                         }
-                        nodes.add(branch);
-                    }
-                    return nodes;
-                },
-                event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue()),
-                event -> Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException())
-        );
-    }
+                        return nodes;
+                    },
+                    event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue()),
+                    event -> Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException())
+            );
+        }
     }
 
     private void getSystemsByFactions(FilterableTreeItem<TimeSeriesBinding> parent, String factionName) throws DataAdapterException {
@@ -342,7 +343,11 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                             for (Systems s : systemsPages.docs) {
                                 var branch = makeBranch(s.name, s._id, parent.getValue().getTreeHierarchy());
                                 for (var sp : s.factions) {
-                                    branch.getInternalChildren().add(makeBranch(sp.name, sp.name, branch.getValue().getTreeHierarchy()));
+                                    Color color = null;
+                                    if (sp.name.equalsIgnoreCase(parameters.getLookupValue())) {
+                                        color = parameters.getSelectedColor();
+                                    }
+                                    branch.getInternalChildren().add(makeBranch(sp.name, sp.name, branch.getValue().getTreeHierarchy(), color));
                                 }
                                 nodes.add(branch);
                             }
@@ -425,6 +430,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         var res = AsyncTaskManager.getInstance().submit(() -> {
                     var pages = gson.fromJson(getRawPageData(API_FACTIONS, beginWith, page), FactionsPage.class);
                     returnValue.set(pages);
+
                     return pages;
                 },
                 event -> {
@@ -452,10 +458,14 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     }
 
     private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy) {
+        return makeBranch(name, id, parentHierarchy, null);
+    }
+
+    private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy, Color color) {
         return new FilterableTreeItem<>(new TimeSeriesBinding(
                 name,
                 id,
-                null,
+                color,
                 name,
                 UnitPrefixes.METRIC,
                 ChartType.LINE,

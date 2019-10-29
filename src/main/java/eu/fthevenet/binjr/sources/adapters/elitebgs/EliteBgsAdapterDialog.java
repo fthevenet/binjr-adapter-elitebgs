@@ -17,6 +17,7 @@
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import eu.binjr.common.preferences.MostRecentlyUsedList;
+import eu.binjr.common.preferences.Preference;
 import eu.binjr.core.data.adapters.DataAdapter;
 import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
@@ -41,6 +42,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.util.Callback;
 import org.apache.http.NameValuePair;
 import org.apache.logging.log4j.LogManager;
@@ -71,6 +73,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private DataAdapter result = null;
     private List<ReadOnlyProperty<QueryParameters>> filters = new ArrayList<>();
     private Property<FactionBrowsingMode> browsingMode = new SimpleObjectProperty<>();
+    private ColorPicker factionColor = new ColorPicker();
 
     /**
      * Initializes a new instance of the {@link EliteBgsAdapterDialog} class.
@@ -81,6 +84,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         if (owner != null) {
             this.initOwner(Dialogs.getStage(owner));
         }
+
         this.setTitle("Elite Dangerous BGS");
         VBox vBox = new VBox();
         vBox.setPrefWidth(350);
@@ -91,7 +95,6 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         browsingModeChoiceBox.getSelectionModel().select(0);
         browsingMode.bind(browsingModeChoiceBox.valueProperty());
         browsingModeChoiceBox.setMaxWidth(Double.MAX_VALUE);
-
         var isLookupSystemBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.SYSTEM_LOOKUP,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
         var isLookupFactionBinding = (Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.FACTION_LOOKUP,
@@ -100,20 +103,12 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty()));
         var isSystemBinding = Bindings.createBooleanBinding(() -> browsingModeChoiceBox.getSelectionModel().getSelectedItem() == FactionBrowsingMode.BROWSE_BY_SYSTEM,
                 browsingModeChoiceBox.getSelectionModel().selectedItemProperty());
-
-        var stateChoiceBox = initChoiceBox("State: ", StateTypes.values());
-        stateChoiceBox.visibleProperty().bind(isFactionBinding.or(isSystemBinding));
-        var economyChoiceBox = initChoiceBox("Economy: ", EconomyTypes.values());
-        economyChoiceBox.visibleProperty().bind(isSystemBinding);
-        var allegianceChoiceBox = initChoiceBox("Allegiance: ", Allegiances.values());
-        allegianceChoiceBox.visibleProperty().bind(isFactionBinding.or(isSystemBinding));
-        var governmentChoiceBox = initChoiceBox("Government: ", SystemGovernmentTypes.values());
-        governmentChoiceBox.visibleProperty().bind(isSystemBinding);
-        var factionGovernmentChoiceBox = initChoiceBox("Government: ", FactionGovernmentTypes.values());
-        factionGovernmentChoiceBox.visibleProperty().bind(isFactionBinding);
-        var securityChoiceBox = initChoiceBox("Security: ", SecurityLevels.values());
-        securityChoiceBox.visibleProperty().bind(isSystemBinding);
-
+        var stateChoiceBox = initChoiceBox("State: ", StateTypes.values(), isFactionBinding.or(isSystemBinding));
+        var economyChoiceBox = initChoiceBox("Economy: ", EconomyTypes.values(), isSystemBinding);
+        var allegianceChoiceBox = initChoiceBox("Allegiance: ", Allegiances.values(), isFactionBinding.or(isSystemBinding));
+        var governmentChoiceBox = initChoiceBox("Government: ", SystemGovernmentTypes.values(), isSystemBinding);
+        var factionGovernmentChoiceBox = initChoiceBox("Government: ", FactionGovernmentTypes.values(), isFactionBinding);
+        var securityChoiceBox = initChoiceBox("Security: ", SecurityLevels.values(), isSystemBinding);
         vBox.getChildren().addAll(
                 browsingModeChoiceBox,
                 allegianceChoiceBox,
@@ -122,7 +117,6 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
                 securityChoiceBox,
                 economyChoiceBox,
                 stateChoiceBox);
-
         this.factionNameField = makeLookupField(vBox, isLookupFactionBinding, "Faction Name:", mostRecentFactions, param -> {
             if (param.getUserText() != null && !param.getUserText().isBlank()) {
                 try {
@@ -144,6 +138,12 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
             }
             return Collections.emptyList();
         });
+        factionColor.getStyleClass().clear();
+        factionColor.getStyleClass().addAll("choice-box", "color-picker");
+        factionColor.setValue(Color.ORANGE);
+        var colorSelectionPane = layoutControl("Faction color", factionColor, isLookupFactionBinding);
+        vBox.getChildren().add(colorSelectionPane);
+
 
         VBox.setVgrow(vBox, Priority.ALWAYS);
         DialogPane dialogPane = new DialogPane();
@@ -190,28 +190,26 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
                                              MostRecentlyUsedList<String> mru,
                                              Callback<AutoCompletionBinding.ISuggestionRequest,
                                                      Collection<String>> suggestCallback) {
-        HBox hBox = new HBox();
-        hBox.setAlignment(Pos.CENTER_LEFT);
-        var label = new Label(title);
-        HBox.setMargin(label, new Insets(0, 0, 0, 2));
-        label.setPrefWidth(100);
-        label.setMinWidth(100);
-        label.setMaxWidth(100);
         ComboBox<String> comboBox = new ComboBox<>();
         comboBox.setEditable(true);
         comboBox.setItems(FXCollections.observableArrayList(mru.getAll()));
         HBox.setHgrow(comboBox, Priority.SOMETIMES);
         comboBox.setMaxWidth(Double.MAX_VALUE);
-        hBox.visibleProperty().bind(isLookupBinding);
-        hBox.managedProperty().bind(hBox.visibleProperty());
-        hBox.getChildren().addAll(label, comboBox);
-        hBox.managedProperty().bind(hBox.visibleProperty());
+        var hBox = layoutControl(title, comboBox, isLookupBinding);
         TextFields.bindAutoCompletion(comboBox.getEditor(), suggestCallback);
         parent.getChildren().add(hBox);
         return comboBox;
     }
 
-    private HBox initChoiceBox(String title, QueryParameters[] values) {
+    private HBox initChoiceBox(String title, QueryParameters[] values, BooleanBinding binding) {
+        var cb = new ChoiceBox<>(FXCollections.observableArrayList(values));
+        filters.add(cb.getSelectionModel().selectedItemProperty());
+        cb.getSelectionModel().select(0);
+        return layoutControl(title, cb, binding);
+
+    }
+
+    private HBox layoutControl(String title, Control control, BooleanBinding binding) {
         HBox hBox = new HBox();
         hBox.setAlignment(Pos.CENTER_LEFT);
         var label = new Label(title);
@@ -219,15 +217,13 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         label.setPrefWidth(100);
         label.setMinWidth(100);
         label.setMaxWidth(100);
-        var cb = new ChoiceBox<>(FXCollections.observableArrayList(values));
-        filters.add(cb.getSelectionModel().selectedItemProperty());
-        hBox.getChildren().addAll(label, cb);
-        cb.getSelectionModel().select(0);
-        HBox.setHgrow(cb, Priority.ALWAYS);
+        hBox.getChildren().addAll(label, control);
+        HBox.setHgrow(control, Priority.ALWAYS);
         hBox.setMaxWidth(Double.MAX_VALUE);
-        cb.setMaxWidth(Double.MAX_VALUE);
-        cb.setPrefWidth(-1);
+        control.setMaxWidth(Double.MAX_VALUE);
+        control.setPrefWidth(-1);
         hBox.managedProperty().bind(hBox.visibleProperty());
+        hBox.visibleProperty().bind(binding);
         return hBox;
     }
 
@@ -239,12 +235,15 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
      */
     private DataAdapter getDataAdapter() throws DataAdapterException {
         List<NameValuePair> list = filters.stream().map(ObservableValue::getValue).collect(Collectors.toList());
+        EliteBgsAdapterParameters parameters = new EliteBgsAdapterParameters();
+        parameters.setBrowsingMode(browsingMode.getValue());
+        parameters.setSelectedColor(factionColor.getValue());
         if (browsingMode.getValue() == FactionBrowsingMode.FACTION_LOOKUP) {
             var factionName = factionNameField.getSelectionModel().getSelectedItem();
             if (!EliteBgsAdapter.getHelper().factionExists(factionName)) {
                 throw new NoSuchFactionException(factionName);
             }
-            list.add(QueryParameters.lookupFaction(factionName));
+            parameters.setLookupValue(factionName);
             mostRecentFactions.push(factionName);
         }
         if (browsingMode.getValue() == FactionBrowsingMode.SYSTEM_LOOKUP) {
@@ -252,10 +251,10 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
             if (!EliteBgsAdapter.getHelper().systemExists(systemName)) {
                 throw new NoSuchSystemException(systemName);
             }
-            list.add(QueryParameters.lookupSystem(systemName));
+            parameters.setLookupValue(systemName);
             mostRecentSystems.push(systemName);
         }
-        return new EliteBgsAdapter(browsingMode.getValue(), list);
+        return new EliteBgsAdapter(parameters, list);
     }
 
 }

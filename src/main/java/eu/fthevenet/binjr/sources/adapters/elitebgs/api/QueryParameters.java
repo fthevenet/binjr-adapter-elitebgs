@@ -33,8 +33,7 @@ public interface QueryParameters extends NameValuePair {
     String PARAM_PAGE = "page";
     String PARAM_BEGINS_WITH = "beginsWith";
     String PARAM_NAME = "name";
-    String PARAM_LOOKUP_FACTION = "lookupFaction";
-    String PARAM_LOOKUP_SYSTEM = "lookupSystem";
+
 
     Set<String> knownParameterNames = new HashSet<>(Arrays.asList(
             PARAM_ID,
@@ -46,9 +45,7 @@ public interface QueryParameters extends NameValuePair {
             PARAM_TIMEMIN,
             PARAM_TIMEMAX,
             PARAM_BEGINS_WITH,
-            PARAM_NAME,
-            PARAM_LOOKUP_FACTION,
-            PARAM_LOOKUP_SYSTEM
+            PARAM_NAME
     ));
 
     static boolean isParameterNameKnown(String name) {
@@ -90,14 +87,6 @@ public interface QueryParameters extends NameValuePair {
             return Optional.empty();
         }
         return Optional.of(new BasicParameter(name, value));
-    }
-
-    static QueryParameters lookupFaction(String value) {
-        return new BasicParameter(PARAM_LOOKUP_FACTION, value);
-    }
-
-    static QueryParameters lookupSystem(String value) {
-        return new BasicParameter(PARAM_LOOKUP_SYSTEM, value);
     }
 
     static QueryParameters name(String value) {
