@@ -1,3 +1,8 @@
+## [v1.0.0](https://github.com/fthevenet/binjr-adapter-elitebgs/releases/tag/v1.0.0)
+Released on Thu, 31 Oct 2019
+
+* _[New]_ You can  now choose the colour of a selected faction's influence chart when browsing for a specific faction, to make it easier to distinguish it from the other.
+
 ## [Preview v0.4.0](https://github.com/fthevenet/binjr-adapter-elitebgs/releases/tag/v0.4.0)
 Released on Sat, 28 Sep 2019
 
