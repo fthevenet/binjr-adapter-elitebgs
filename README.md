@@ -1,5 +1,6 @@
 # Elite Dangerous BGS adapter for binjr
-[![Build Status](https://dev.azure.com/binjr/binjr/_apis/build/status/fthevenet.binjr-adapter-elitebgs?branchName=master&jobName=Build)](https://dev.azure.com/binjr/binjr/_build/latest?definitionId=5&branchName=master) [![Github Release](https://img.shields.io/github/release/fthevenet/binjr-adapter-elitebgs.svg?label=Github%20Release)](https://github.com/fthevenet/binjr-adapter-elitebgs/releases/latest)  
+[![Build Status](https://dev.azure.com/binjr/binjr/_apis/build/status/fthevenet.binjr-adapter-elitebgs?branchName=master)](https://dev.azure.com/binjr/binjr/_build/latest?definitionId=5&branchName=master)
+[![Github Release](https://img.shields.io/github/release/fthevenet/binjr-adapter-elitebgs.svg?label=Github%20Release)](https://github.com/fthevenet/binjr-adapter-elitebgs/releases/latest)  
 
 This is a plugin for [binjr](https://binjr.eu), which allows it to access and visualize some of the data produced by the
  Background Simulation (BGS) of the video game [Elite Dangerous](https://elitedangerous.com) by [Frontier Development](https://frontier.co.uk).
