@@ -1,0 +1,1 @@
+* _[New]_ You can  now choose the colour of a selected faction's influence chart when browsing for a specific faction, to make it easier to distinguish it from the other.
