@@ -30,6 +30,6 @@ public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
                 "https://github.com/fthevenet/binjr-adapter-elitebgs",
                 EliteBgsAdapter.class,
                 EliteBgsAdapterDialog.class,
-                new EliteBgsAdapterPreferences());
+                EliteBgsAdapterPreferences.getInstance());
     }
 }
