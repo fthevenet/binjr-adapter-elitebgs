@@ -48,7 +48,7 @@ the historical data uploaded by the community through the [Elite Dangerous Data 
     * Choose line width and area opacity.
     * Choose the constraints on the Y axis.
     
-#### 4.Navigating through the data
+#### 4. Navigating through the data
 
 *  Once you've created a worksheet, you can select the time interval it should show by clicking the clock icon at the top.
 * You can also zoom in using the mouse left-click (make sure the axis marker is enabled, using the <|> icon on the toolbar).
