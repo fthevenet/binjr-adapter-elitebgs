@@ -17,20 +17,23 @@ the historical data uploaded by the community through the [Elite Dangerous Data 
 
  * First you need to download and install the binjr client application for your platform from https://binjr.eu
  * Download the the latest version of the plugin, available as a .jar file from the [release page](https://github.com/fthevenet/binjr-adapter-elitebgs/releases/latest)
- * Copy the file binjr-adapter-elitebgs-x.x.jar into the `plugins` folder of your binjr installation (if you used the installer on Windows, it will be in [ICODE]%LOCALAPPDATA%\binjr\plugins[/ICODE] by default).
+ * Copy the file binjr-adapter-elitebgs-x.x.jar into the `plugins` folder of your binjr installation (if you used the installer on Windows, it will be in `%LOCALAPPDATA%\binjr\plugins` by default).
  * Start binjr, and select "Elite BGS" to add a new data source.
 
 ## How to use it
 
 #### 1. Adding a data source
 * Start binjr, and in the left hand menu select "Sources > New Source... > Elite Dangerous BGS"
-* This will add a new source in the left-hand pane, fittingly called "Elite Dangerous BGS".
-* Browse through the tree view to find a system you're interested in (Systems are categorized alphabetically, to avoid downloading everything at once. Admittedly, it is far from ideal and will be improved in the near future).
+* This will show a dialog box where you can choose in which way the influence data should be presented:
+   * **Browse by Systems** will display a tree view of systems matching the filter entered in the dialog, hierachized according to the alphabetical order, and under it a list of factions present in that system.
+   * **Browse by Factions** will reversely  display a tree where factions are the upper level and systems they're present in are attached ot it. 
+   * **Look for a specific faction** asks you to choose a single faction and will only display systems where that faction has a presence.
+   * **Look for a specific system** will let you choose the specific system you're interested in.
 * You'll noticed other types of data source as they are bundled with binjr by default; its unlikely will need any of those in this specific context, though the "csv" source is pretty generic and could be used to mixed in some off you own custom data with MF influence (you can add more than one source to a session and mix elements from any sources in a chart).
-* If those extra sources bother you, you can always move or delete the corresponding .jar files in the plugins folder.
+* If those extra sources bother you, you can hide them via the `Settings > Charts` panel.
 
 #### 2. Adding charts
-* You can then drag a whole system branch or individual faction leaves onto the + icon on the right pane to create a new view (unimaginatively called a "worksheet"). Alternatively, right-clicking on a tree branch will invoke a context menu which allows for the same thing.
+* You can then drag a whole system branch or individual faction leaves onto the + icon on the right pane to create a new view (called a "worksheet"). Alternatively, right-clicking on a tree branch will invoke a context menu which allows for the same thing.
 * You can then drag more factions to plot their influence:
     * If you drop it onto the landing zone with a "chart+" icon at the bottom of the chart view, it will add it to a new chart on the same worksheet.
     * if you drop it onto the landing zone withe a "tab+" icon at the top, it will create a new worksheet (in a new tab) and add the selected factions to it.
