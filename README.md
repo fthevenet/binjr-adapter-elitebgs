@@ -29,6 +29,7 @@ the historical data uploaded by the community through the [Elite Dangerous Data 
    * **Browse by Factions** will reversely  display a tree where factions are the upper level and systems they're present in are attached ot it. 
    * **Look for a specific faction** asks you to choose a single faction and will only display systems where that faction has a presence.
    * **Look for a specific system** will let you choose the specific system you're interested in.
+* You can add as many sources as you like in a single session, of the same or different types; for instance you can also add a link to your own time series data stored in a CSV file to cross compare that data with the content of https://elitebgs.app.
 * You'll noticed other types of data source as they are bundled with binjr by default; its unlikely will need any of those in this specific context, though the "csv" source is pretty generic and could be used to mixed in some off you own custom data with MF influence (you can add more than one source to a session and mix elements from any sources in a chart).
 * If those extra sources bother you, you can hide them via the `Settings > Charts` panel.
 
