@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Frederic Thevenet
+ * Copyright 2019-2020 Frederic Thevenet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import eu.binjr.common.javafx.controls.TimeRange;
 import eu.binjr.common.logging.Profiler;
 import eu.binjr.core.data.adapters.HttpDataAdapter;
+import eu.binjr.core.data.adapters.SourceBinding;
 import eu.binjr.core.data.adapters.TimeSeriesBinding;
 import eu.binjr.core.data.async.AsyncTaskManager;
 import eu.binjr.core.data.codec.Decoder;
@@ -178,7 +179,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     }
 
     @Override
-    public FilterableTreeItem<TimeSeriesBinding> getBindingTree() throws DataAdapterException {
+    public FilterableTreeItem<SourceBinding> getBindingTree() throws DataAdapterException {
         var root = makeBranch(getSourceName(), TITLE, "");
         switch (parameters.getBrowsingMode()) {
             default:
@@ -291,12 +292,12 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         return queryFilters.toArray(NameValuePair[]::new);
     }
 
-    private void getSystems(FilterableTreeItem<TimeSeriesBinding> parent, String... systemNames) throws DataAdapterException {
+    private void getSystems(FilterableTreeItem<SourceBinding> parent, String... systemNames) throws DataAdapterException {
         for (var systemName : systemNames) {
             List<NameValuePair> params = new ArrayList<>(queryFilters);
             params.add(QueryParameters.name(systemName));
             AsyncTaskManager.getInstance().submit(() -> {
-                        List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
+                        List<FilterableTreeItem<SourceBinding>> nodes = new ArrayList<>();
                         var systemsPages = gson.fromJson(
                                 doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler()),
                                 SystemsPage.class);
@@ -309,13 +310,13 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                         }
                         return nodes;
                     },
-                    event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue()),
+                    event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<SourceBinding>>) event.getSource().getValue()),
                     event -> Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException())
             );
         }
     }
 
-    private void getSystemsByFactions(FilterableTreeItem<TimeSeriesBinding> parent, String factionName) throws DataAdapterException {
+    private void getSystemsByFactions(FilterableTreeItem<SourceBinding> parent, String factionName) throws DataAdapterException {
         List<NameValuePair> factionParams = new ArrayList<>(queryFilters);
         factionParams.add(QueryParameters.name(factionName));
         var pages = gson.fromJson(
@@ -336,7 +337,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
             for (var params : paramPages) {
                 params.addAll(queryFilters);
                 AsyncTaskManager.getInstance().submit(() -> {
-                            List<FilterableTreeItem<TimeSeriesBinding>> nodes = new ArrayList<>();
+                            List<FilterableTreeItem<SourceBinding>> nodes = new ArrayList<>();
                             var systemsPages = gson.fromJson(
                                     doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler()),
                                     SystemsPage.class);
@@ -353,14 +354,14 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
                             }
                             return nodes;
                         },
-                        event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<TimeSeriesBinding>>) event.getSource().getValue()),
+                        event -> parent.getInternalChildren().addAll((List<FilterableTreeItem<SourceBinding>>) event.getSource().getValue()),
                         event -> Dialogs.notifyException("An error occurred while retrieving tree view from source", event.getSource().getException())
                 );
             }
         }
     }
 
-    private void addNodesGroupedByName(FilterableTreeItem<TimeSeriesBinding> parent, AddPageDelegate addPageDelegate) {
+    private void addNodesGroupedByName(FilterableTreeItem<SourceBinding> parent, AddPageDelegate addPageDelegate) {
         String alphabet = "123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         for (int i = 0; i < alphabet.length(); i++) {
             String letter = String.valueOf(alphabet.charAt(i));
@@ -372,7 +373,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         }
     }
 
-    private void addAllPages(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, AddPageDelegate
+    private void addAllPages(FilterableTreeItem<SourceBinding> tree, String beginWith, AddPageDelegate
             pageDelegate) throws DataAdapterException {
         AtomicInteger nbPages = new AtomicInteger(0);
         AtomicInteger nbHits = new AtomicInteger(0);
@@ -392,7 +393,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         }
     }
 
-    private SystemsPage addSystemsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith,
+    private SystemsPage addSystemsPage(FilterableTreeItem<SourceBinding> tree, String beginWith,
                                        int page, boolean waitForResult) throws DataAdapterException {
         AtomicReference<SystemsPage> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
@@ -424,7 +425,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         return returnValue.get();
     }
 
-    private FactionsPage addFactionsPage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith,
+    private FactionsPage addFactionsPage(FilterableTreeItem<SourceBinding> tree, String beginWith,
                                          int page, boolean waitForResult) throws DataAdapterException {
         AtomicReference<FactionsPage> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
@@ -457,11 +458,11 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
         return returnValue.get();
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy) {
+    private FilterableTreeItem<SourceBinding> makeBranch(String name, String id, String parentHierarchy) {
         return makeBranch(name, id, parentHierarchy, null);
     }
 
-    private FilterableTreeItem<TimeSeriesBinding> makeBranch(String name, String id, String parentHierarchy, Color color) {
+    private FilterableTreeItem<SourceBinding> makeBranch(String name, String id, String parentHierarchy, Color color) {
         return new FilterableTreeItem<>(new TimeSeriesBinding(
                 name,
                 id,
@@ -485,7 +486,7 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
 
     @FunctionalInterface
     private interface AddPageDelegate {
-        AbstractPage<?> addSinglePage(FilterableTreeItem<TimeSeriesBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
+        AbstractPage<?> addSinglePage(FilterableTreeItem<SourceBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
     }
 
     static private class InstanceHolder {
@@ -493,11 +494,11 @@ public class EliteBgsAdapter extends HttpDataAdapter implements EdbgsApiHelper {
     }
 
     private class ExpandListener implements ChangeListener<Boolean> {
-        private final FilterableTreeItem<TimeSeriesBinding> newBranch;
+        private final FilterableTreeItem<SourceBinding> newBranch;
         private final String beginWith;
         private final AddPageDelegate addPageDelegate;
 
-        public ExpandListener(FilterableTreeItem<TimeSeriesBinding> newBranch,
+        public ExpandListener(FilterableTreeItem<SourceBinding> newBranch,
                               String beginWith,
                               AddPageDelegate onExpandAction) {
             this.newBranch = newBranch;
