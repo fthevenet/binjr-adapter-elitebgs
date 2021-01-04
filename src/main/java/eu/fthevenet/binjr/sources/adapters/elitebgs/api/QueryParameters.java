@@ -26,10 +26,10 @@ public interface QueryParameters extends NameValuePair {
     String PARAM_GOVERNMENT = "government";
     String PARAM_SECURITY = "security";
     String PARAM_ALLEGIANCE = "allegiance";
-    String PARAM_ECONOMY = "primaryeconomy";
+    String PARAM_ECONOMY = "primaryEconomy";
     String PARAM_STATE = "state";
-    String PARAM_TIMEMIN = "timemin";
-    String PARAM_TIMEMAX = "timemax";
+    String PARAM_TIMEMIN = "timeMin";
+    String PARAM_TIMEMAX = "timeMax";
     String PARAM_PAGE = "page";
     String PARAM_BEGINS_WITH = "beginsWith";
     String PARAM_NAME = "name";

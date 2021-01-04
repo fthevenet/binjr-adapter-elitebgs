@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Frederic Thevenet
+ * Copyright 2019-2021 Frederic Thevenet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import eu.binjr.common.preferences.MostRecentlyUsedList;
 import eu.binjr.core.data.adapters.DataAdapter;
+import eu.binjr.core.data.adapters.DataAdapterFactory;
 import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 import eu.binjr.core.data.exceptions.DataAdapterException;
+import eu.binjr.core.data.exceptions.NoAdapterFoundException;
 import eu.binjr.core.dialogs.Dialogs;
 import eu.binjr.core.preferences.UserHistory;
 import eu.fthevenet.binjr.sources.adapters.elitebgs.api.*;
@@ -58,7 +60,7 @@ import java.util.stream.Collectors;
  *
  * @author Frederic Thevenet
  */
-public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
+public class EliteBgsAdapterDialog extends Dialog<Collection<DataAdapter>> {
     private static final Logger logger = LogManager.getLogger(EliteBgsAdapterDialog.class);
     private static final String BINJR_SOURCES = "binjr/sources";
     private final ComboBox<String> factionNameField;
@@ -67,10 +69,11 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
     private final ComboBox<String> systemNameField;
     private final MostRecentlyUsedList<String> mostRecentSystems =
             UserHistory.getInstance().stringMostRecentlyUsedList("mostRecentSystems", 20);
-    private DataAdapter result = null;
+    private Collection<DataAdapter> result = null;
     private List<ReadOnlyProperty<QueryParameters>> filters = new ArrayList<>();
     private Property<FactionBrowsingMode> browsingMode = new SimpleObjectProperty<>();
     private ColorPicker factionColor = new ColorPicker();
+    private final EliteBgsAdapterPreferences prefs;
 
     /**
      * Initializes a new instance of the {@link EliteBgsAdapterDialog} class.
@@ -78,6 +81,12 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
      * @param owner the owner window for the dialog
      */
     public EliteBgsAdapterDialog(Node owner) {
+        try {
+            this.prefs = (EliteBgsAdapterPreferences) DataAdapterFactory.getInstance().getAdapterPreferences(EliteBgsAdapter.class.getName());
+        } catch (NoAdapterFoundException e) {
+            logger.error("Failed to recover preferences: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
         if (owner != null) {
             this.initOwner(Dialogs.getStage(owner));
         }
@@ -89,7 +98,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
         vBox.setAlignment(Pos.TOP_CENTER);
         var browsingModeChoiceBox = new ChoiceBox<>(FXCollections.observableArrayList(FactionBrowsingMode.values()));
         browsingModeChoiceBox.valueProperty().bindBidirectional(
-                EliteBgsAdapterPreferences.getInstance().lastSelectedBrowsingMode.property());
+               prefs.lastSelectedBrowsingMode.property());
         browsingMode.bind(browsingModeChoiceBox.valueProperty());
         browsingModeChoiceBox.setMaxWidth(Double.MAX_VALUE);
         var isLookupSystemBinding = (Bindings.createBooleanBinding(
@@ -143,7 +152,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
                 });
         factionColor.getStyleClass().clear();
         factionColor.getStyleClass().addAll("choice-box", "color-picker");
-        factionColor.valueProperty().bindBidirectional(EliteBgsAdapterPreferences.getInstance().lastFactionColor.property());
+        factionColor.valueProperty().bindBidirectional(prefs.lastFactionColor.property());
         var colorSelectionPane = layoutControl("Faction Color", factionColor, isLookupFactionBinding);
         vBox.getChildren().add(colorSelectionPane);
 
@@ -239,7 +248,7 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
      * @return an instance of {@link EliteBgsAdapter}
      * @throws DataAdapterException if the provided parameters are invalid
      */
-    private DataAdapter getDataAdapter() throws DataAdapterException {
+    private Collection<DataAdapter> getDataAdapter() throws DataAdapterException {
         List<NameValuePair> list = filters.stream().map(ObservableValue::getValue).collect(Collectors.toList());
         EliteBgsAdapterParameters parameters = new EliteBgsAdapterParameters();
         parameters.setBrowsingMode(browsingMode.getValue());
@@ -260,6 +269,6 @@ public class EliteBgsAdapterDialog extends Dialog<DataAdapter> {
             parameters.setLookupValue(systemName);
             mostRecentSystems.push(systemName);
         }
-        return new EliteBgsAdapter(parameters, list);
+        return List.of(new EliteBgsAdapter(parameters, list));
     }
 }

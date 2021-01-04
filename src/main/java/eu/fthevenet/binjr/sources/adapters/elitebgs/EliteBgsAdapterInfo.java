@@ -1,5 +1,5 @@
 /*
- * Copyright 2019-2020 Frederic Thevenet
+ * Copyright 2019-2021 Frederic Thevenet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,29 @@
 package eu.fthevenet.binjr.sources.adapters.elitebgs;
 
 import eu.binjr.common.version.Version;
+import eu.binjr.core.data.adapters.AdapterMetadata;
 import eu.binjr.core.data.adapters.BaseDataAdapterInfo;
 import eu.binjr.core.data.adapters.SourceLocality;
+import eu.binjr.core.data.exceptions.CannotInitializeDataAdapterException;
 
 import java.util.prefs.Preferences;
 
+@AdapterMetadata(
+        name = "Elite Dangerous BGS",
+        description = "Elite Dangerous BGS Data Adapter",
+        copyright = "Copyright © 2019-2021 Frederic Thevenet",
+        license = "Apache-2.0",
+        siteUrl = "https://github.com/fthevenet/binjr-adapter-elitebgs",
+        adapterClass = EliteBgsAdapter.class,
+        dialogClass = EliteBgsAdapterDialog.class,
+        preferencesClass = EliteBgsAdapterPreferences.class,
+        sourceLocality = SourceLocality.REMOTE,
+        version = "1.1.0",
+        apiLevel = "3.0.0")
 public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
 
-    public EliteBgsAdapterInfo(){
-        super("Elite Dangerous BGS",
-                "Elite Dangerous BGS Data Adapter",
-                "Copyright © 2019-2020 Frederic Thevenet",
-                "Apache-2.0",
-                "https://github.com/fthevenet/binjr-adapter-elitebgs",
-                EliteBgsAdapter.class,
-                EliteBgsAdapterDialog.class,
-                EliteBgsAdapterPreferences.getInstance(),
-                SourceLocality.REMOTE,
-                Version.parseVersion("3.0.0"));
+    public EliteBgsAdapterInfo() throws CannotInitializeDataAdapterException {
+        super(EliteBgsAdapterInfo.class);
     }
+
 }

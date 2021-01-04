@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Frederic Thevenet
+ * Copyright 2019-2021 Frederic Thevenet
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import eu.binjr.core.data.exceptions.DecodingDataFromAdapterException;
 import eu.binjr.core.data.timeseries.DoubleTimeSeriesProcessor;
 import eu.binjr.core.data.timeseries.TimeSeriesProcessor;
 import eu.binjr.core.data.workspace.TimeSeriesInfo;
-import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v4.FactionsPage;
+import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v5.EBGSFactionsPageV5;
 import javafx.scene.chart.XYChart;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,7 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EliteBgsDecoder implements Decoder {
+public class EliteBgsDecoder implements Decoder<Double> {
     private static final Logger logger = LogManager.getLogger(EliteBgsDecoder.class);
     private final Gson gson;
 
@@ -46,36 +46,37 @@ public class EliteBgsDecoder implements Decoder {
     }
 
     @Override
-    public Map<TimeSeriesInfo, TimeSeriesProcessor> decode(InputStream in, List<TimeSeriesInfo> seriesNames)
+    public Map<TimeSeriesInfo<Double>, TimeSeriesProcessor<Double>> decode(InputStream in, List<TimeSeriesInfo<Double>> seriesNames)
             throws IOException, DecodingDataFromAdapterException {
-        Map<TimeSeriesInfo, TimeSeriesProcessor> map = new HashMap<>();
+        Map<TimeSeriesInfo<Double>, TimeSeriesProcessor<Double>> map = new HashMap<>();
         try (InputStreamReader reader = new InputStreamReader(in)) {
-            var factionPages = gson.fromJson(reader, FactionsPage.class);
-            for (var f : factionPages.docs) {
+            var factionPages = gson.fromJson(reader, EBGSFactionsPageV5.class);
+            for (var f : factionPages.getDocs()) {
                 for (var info : seriesNames) {
                     var proc = new DoubleTimeSeriesProcessor();
                     Path hierarchy = Paths.get(info.getBinding().getTreeHierarchy());
                     String parentSystem = hierarchy.getFileName().toString();
-                    if (parentSystem.equalsIgnoreCase(f.name)) {
+                    if (parentSystem.equalsIgnoreCase(f.getName())) {
                         parentSystem = hierarchy.getParent().getFileName().toString();
                     }
                     if (logger.isTraceEnabled()) {
-                        logger.trace("Parent system for faction " + f.name + ": " + parentSystem);
+                        logger.trace("Parent system for faction " + f.getName() + ": " + parentSystem);
                     }
                     // Add influence values from history
-                    for (var h : f.history) {
-                        if (parentSystem.equalsIgnoreCase(h.system)) {
+                    for (var h : f.getHistory()) {
+                        if (parentSystem.equalsIgnoreCase(h.getSystem())) {
                             proc.addSample(new XYChart.Data<>(
-                                    ZonedDateTime.parse(h.updated_at),
-                                    Double.isNaN(h.influence) ? 0.0 : h.influence * 100));
+                                    ZonedDateTime.parse(h.getUpdatedAt()),
+                                    Double.isNaN(h.getInfluence()) ? 0.0 : h.getInfluence() * 100));
                         }
                     }
+
                     // Add current influence value
-                    for (var c : f.faction_presence) {
-                        if (parentSystem.equalsIgnoreCase(c.system_name)) {
+                    for (var c : f.getFactionPresence()) {
+                        if (parentSystem.equalsIgnoreCase(c.getSystemName())) {
                             proc.addSample(new XYChart.Data<>(
-                                    ZonedDateTime.parse(c.updated_at),
-                                    Double.isNaN(c.influence) ? 0.0 : c.influence * 100));
+                                    ZonedDateTime.parse(c.getUpdatedAt()),
+                                    Double.isNaN(c.getInfluence()) ? 0.0 : c.getInfluence() * 100));
                         }
                     }
                     map.put(info, proc);
