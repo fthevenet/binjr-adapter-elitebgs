@@ -61,8 +61,6 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     private static final String API_VERSION = "v5";
     private static final String API_FACTIONS = "/api/ebgs/" + API_VERSION + "/factions";
     private static final String API_SYSTEMS = "/api/ebgs/" + API_VERSION + "/systems";
-    private static final String FRONTEND_FACTIONS = "/frontend/factions";
-    private static final String FRONTEND_SYSTEMS = "/frontend/systems";
     private static final String TITLE = "ED BGS";
     private final EliteBgsDecoder eliteBgsDecoder;
     private final Gson gson;
@@ -316,8 +314,9 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     private void getSystemsByFactions(FilterableTreeItem<SourceBinding> parent, String factionName) throws DataAdapterException {
         List<NameValuePair> factionParams = new ArrayList<>(queryFilters);
         factionParams.add(QueryParameters.name(factionName));
+       // factionParams.add(QueryParameters.minimal(true));
         var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(FRONTEND_FACTIONS, factionParams), new BasicResponseHandler()),
+                doHttpGet(craftRequestUri(API_FACTIONS, factionParams), new BasicResponseHandler()),
                 EBGSFactionsPageV5.class);
         for (EBGSFactionsV5 f : pages.getDocs()) {
             int nbFactions = f.getFactionPresence().size();
@@ -336,7 +335,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
                 AsyncTaskManager.getInstance().submit(() -> {
                             List<FilterableTreeItem<SourceBinding>> nodes = new ArrayList<>();
                             var systemsPages = gson.fromJson(
-                                    doHttpGet(craftRequestUri(FRONTEND_SYSTEMS, params), new BasicResponseHandler()),
+                                    doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler()),
                                     EBGSSystemsPageV5.class);
                             for (EBGSSystemsV5 s : systemsPages.getDocs()) {
                                 var branch = makeBranch(s.getName(), s.getId(), parent.getValue().getTreeHierarchy());
