@@ -45,7 +45,7 @@ jobs:
       - task: GithubRelease@0
         condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
         inputs:
-          gitHubConnection: fthevenet
+          gitHubConnection: github.com_fthevenet
           repositoryName: fthevenet/binjr-adapter-elitebgs
           action: edit
           tag: $(Build.SourceBranchName)

@@ -34,7 +34,6 @@ import java.util.prefs.Preferences;
         dialogClass = EliteBgsAdapterDialog.class,
         preferencesClass = EliteBgsAdapterPreferences.class,
         sourceLocality = SourceLocality.REMOTE,
-        version = "1.1.0",
         apiLevel = "3.0.0")
 public class EliteBgsAdapterInfo extends BaseDataAdapterInfo {
 
