@@ -35,13 +35,13 @@ ext.OPENJFX_PLATEFORM_CLASSIFIER = IS_MAC ? 'mac' : IS_WINDOWS ? 'win' : IS_LINU
 group 'eu.fthevenet'
 version "${PRODUCT_VERSION}"
 
-sourceCompatibility = 11
-targetCompatibility = 11
+sourceCompatibility = 17
+targetCompatibility = 17
 description 'Elite Dangerous BGS adapter'
 compileJava.options.encoding = 'UTF-8'
 
 dependencies {
-    implementation 'eu.binjr:binjr-core:3.0.1'
+    implementation 'eu.binjr:binjr-core:3.3.0-SNAPSHOT'
     implementation "org.openjfx:javafx-base:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     implementation "org.openjfx:javafx-graphics:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     implementation "org.openjfx:javafx-controls:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"

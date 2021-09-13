@@ -35,8 +35,7 @@ import eu.fthevenet.binjr.sources.adapters.elitebgs.api.v5.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.paint.Color;
-import org.apache.http.NameValuePair;
-import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.hc.core5.http.NameValuePair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.fx.ui.controls.tree.FilterableTreeItem;
@@ -112,7 +111,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
             throw new DataAdapterException("Please provide a faction name");
         }
         var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.beginsWith(beginsWith)), new BasicResponseHandler()),
+                doHttpGetJson(craftRequestUri(API_FACTIONS, QueryParameters.beginsWith(beginsWith))),
                 EBGSFactionsPageV5.class);
         var factionNames = new ArrayList<String>();
         for (EBGSFactionsV5 f : pages.getDocs()) {
@@ -128,7 +127,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
             throw new DataAdapterException("Please provide a system name");
         }
         var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(API_SYSTEMS, QueryParameters.beginsWith(beginsWith)), new BasicResponseHandler()),
+                doHttpGetJson(craftRequestUri(API_SYSTEMS, QueryParameters.beginsWith(beginsWith))),
                 EBGSSystemsPageV5.class);
         var systemNames = new ArrayList<String>();
         for (EBGSSystemsV5 s : pages.getDocs()) {
@@ -144,7 +143,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
             throw new DataAdapterException("Please provide a faction name");
         }
         var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(API_FACTIONS, QueryParameters.name(factionName)), new BasicResponseHandler()),
+                doHttpGetJson(craftRequestUri(API_FACTIONS, QueryParameters.name(factionName))),
                 EBGSFactionsPageV5.class);
         return pages.getDocs().size() > 0;
     }
@@ -155,7 +154,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
             throw new DataAdapterException("Please provide a system name");
         }
         var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(API_SYSTEMS, QueryParameters.name(systemName)), new BasicResponseHandler()),
+                doHttpGetJson(craftRequestUri(API_SYSTEMS, QueryParameters.name(systemName))),
                 EBGSSystemsPageV5.class);
         return pages.getDocs().size() > 0;
     }
@@ -294,7 +293,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
             AsyncTaskManager.getInstance().submit(() -> {
                         List<FilterableTreeItem<SourceBinding>> nodes = new ArrayList<>();
                         var systemsPages = gson.fromJson(
-                                doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler()),
+                                doHttpGetJson(craftRequestUri(API_SYSTEMS, params)),
                                 EBGSSystemsPageV5.class);
                         for (EBGSSystemsV5 s : systemsPages.getDocs()) {
                             var branch = makeBranch(s.getName(), s.getId(), parent.getValue().getTreeHierarchy());
@@ -314,9 +313,9 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     private void getSystemsByFactions(FilterableTreeItem<SourceBinding> parent, String factionName) throws DataAdapterException {
         List<NameValuePair> factionParams = new ArrayList<>(queryFilters);
         factionParams.add(QueryParameters.name(factionName));
-       // factionParams.add(QueryParameters.minimal(true));
+        // factionParams.add(QueryParameters.minimal(true));
         var pages = gson.fromJson(
-                doHttpGet(craftRequestUri(API_FACTIONS, factionParams), new BasicResponseHandler()),
+                doHttpGetJson(craftRequestUri(API_FACTIONS, factionParams)),
                 EBGSFactionsPageV5.class);
         for (EBGSFactionsV5 f : pages.getDocs()) {
             int nbFactions = f.getFactionPresence().size();
@@ -335,7 +334,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
                 AsyncTaskManager.getInstance().submit(() -> {
                             List<FilterableTreeItem<SourceBinding>> nodes = new ArrayList<>();
                             var systemsPages = gson.fromJson(
-                                    doHttpGet(craftRequestUri(API_SYSTEMS, params), new BasicResponseHandler()),
+                                    doHttpGetJson(craftRequestUri(API_SYSTEMS, params)),
                                     EBGSSystemsPageV5.class);
                             for (EBGSSystemsV5 s : systemsPages.getDocs()) {
                                 var branch = makeBranch(s.getName(), s.getId(), parent.getValue().getTreeHierarchy());
@@ -390,7 +389,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     }
 
     private EBGSSystemsPageV5 addSystemsPage(FilterableTreeItem<SourceBinding> tree, String beginWith,
-                                       int page, boolean waitForResult) throws DataAdapterException {
+                                             int page, boolean waitForResult) throws DataAdapterException {
         AtomicReference<EBGSSystemsPageV5> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
                     var pages = gson.fromJson(getRawPageData(API_SYSTEMS, beginWith, page), EBGSSystemsPageV5.class);
@@ -422,7 +421,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     }
 
     private EBGSFactionsPageV5 addFactionsPage(FilterableTreeItem<SourceBinding> tree, String beginWith,
-                                         int page, boolean waitForResult) throws DataAdapterException {
+                                               int page, boolean waitForResult) throws DataAdapterException {
         AtomicReference<EBGSFactionsPageV5> returnValue = new AtomicReference<>(null);
         var res = AsyncTaskManager.getInstance().submit(() -> {
                     var pages = gson.fromJson(getRawPageData(API_FACTIONS, beginWith, page), EBGSFactionsPageV5.class);
@@ -475,7 +474,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
         var params = new ArrayList<>(queryFilters);
         params.add(QueryParameters.page(page));
         params.add(QueryParameters.beginsWith(beginWith));
-        String entityString = doHttpGet(craftRequestUri(uriPath, params), new BasicResponseHandler());
+        String entityString = doHttpGetJson(craftRequestUri(uriPath, params));
         logger.trace(entityString);
         return entityString;
     }
