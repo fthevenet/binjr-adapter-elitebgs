@@ -36,19 +36,8 @@ public class EliteBgsAdapterPreferences extends DataAdapterPreferences {
     public ObservablePreference<FactionBrowsingMode> lastSelectedBrowsingMode =
             enumPreference(FactionBrowsingMode.class, "lastSelectedBrowsingMode", FactionBrowsingMode.BROWSE_BY_FACTIONS);
 
-//    private EliteBgsAdapterPreferences() {
-//        super(EliteBgsAdapter.class);
-//    }
     public EliteBgsAdapterPreferences(Class<? extends DataAdapter<?>> dataAdapterClass) {
         super(dataAdapterClass);
     }
 
-//
-//    public static EliteBgsAdapterPreferences getInstance() {
-//        return EliteBgsAdapterPreferencesHolder.instance;
-//    }
-//
-//    private static class EliteBgsAdapterPreferencesHolder {
-//        private final static EliteBgsAdapterPreferences instance = new EliteBgsAdapterPreferences();
-//    }
 }

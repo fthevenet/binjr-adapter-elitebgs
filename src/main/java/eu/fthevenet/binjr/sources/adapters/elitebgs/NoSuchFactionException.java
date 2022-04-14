@@ -20,11 +20,12 @@ import eu.binjr.core.data.adapters.DataAdapterFactory;
 import eu.binjr.core.data.exceptions.DataAdapterException;
 
 public class NoSuchFactionException extends DataAdapterException {
-   public NoSuchFactionException(){
-       super();
-   }
 
-    public NoSuchFactionException(String factionName){
-       super("The faction " + factionName + " does not exists");
-   }
+    public NoSuchFactionException() {
+        super();
+    }
+
+    public NoSuchFactionException(String factionName) {
+        super("The faction " + factionName + " does not exists");
+    }
 }

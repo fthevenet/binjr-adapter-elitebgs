@@ -19,6 +19,18 @@ jobs:
     pool:
       vmImage: 'ubuntu-latest'
     steps:
+      - script: |
+          curl 'https://cdn.azul.com/zulu/bin/zulu18.28.13-ca-jdk18.0.0-linux_x64.tar.gz' --output $(Agent.TempDirectory)/jdk-latest-linux_x64.tar.gz
+
+      - task: JavaToolInstaller@0
+        inputs:
+          versionSpec: "18"
+          jdkArchitectureOption: x64
+          jdkSourceOption: LocalDirectory
+          jdkFile: $(Agent.TempDirectory)/jdk-latest-linux_x64.tar.gz
+          jdkDestinationDirectory: $(Agent.ToolsDirectory)/binaries/openjdk
+          cleanDestinationDirectory: true
+
       - bash: |
           echo '##vso[task.setvariable variable=isTag;]true'
         condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
@@ -36,7 +48,7 @@ jobs:
           gradleWrapperFile: 'gradlew'
           gradleOptions: '-Xmx3072m'
           javaHomeOption: 'JDKVersion'
-          jdkVersionOption: '1.11'
+          jdkVersionOption: '1.17'
           jdkArchitectureOption: 'x64'
           publishJUnitResults: false
           testResultsFiles: '**/TEST-*.xml'
@@ -45,7 +57,7 @@ jobs:
       - task: GithubRelease@0
         condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
         inputs:
-          gitHubConnection: github.com_fthevenet
+          gitHubConnection: binjr-bot
           repositoryName: fthevenet/binjr-adapter-elitebgs
           action: edit
           tag: $(Build.SourceBranchName)

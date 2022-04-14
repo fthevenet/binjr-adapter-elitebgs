@@ -27,7 +27,7 @@ import java.util.prefs.Preferences;
 @AdapterMetadata(
         name = "Elite Dangerous BGS",
         description = "Elite Dangerous BGS Data Adapter",
-        copyright = "Copyright © 2019-2021 Frederic Thevenet",
+        copyright = "Copyright © 2019-2022 Frederic Thevenet",
         license = "Apache-2.0",
         siteUrl = "https://github.com/fthevenet/binjr-adapter-elitebgs",
         adapterClass = EliteBgsAdapter.class,

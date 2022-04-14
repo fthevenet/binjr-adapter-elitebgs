@@ -65,7 +65,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     private final Gson gson;
     private final List<NameValuePair> queryFilters = new ArrayList<>();
     private final EliteBgsAdapterPreferences prefs;
-    private EliteBgsAdapterParameters parameters;
+    private final EliteBgsAdapterParameters parameters;
 
     public EliteBgsAdapter() throws CannotInitializeDataAdapterException {
         this(new EliteBgsAdapterParameters());
@@ -168,7 +168,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     }
 
     @Override
-    public Decoder getDecoder() {
+    public Decoder<Double> getDecoder() {
         return eliteBgsDecoder;
     }
 
@@ -176,19 +176,10 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
     public FilterableTreeItem<SourceBinding> getBindingTree() throws DataAdapterException {
         var root = makeBranch(getSourceName(), TITLE, "");
         switch (parameters.getBrowsingMode()) {
-            default:
-            case BROWSE_BY_SYSTEM:
-                addNodesGroupedByName(root, this::addSystemsPage);
-                break;
-            case BROWSE_BY_FACTIONS:
-                addNodesGroupedByName(root, this::addFactionsPage);
-                break;
-            case FACTION_LOOKUP:
-                getSystemsByFactions(root, parameters.getLookupValue());
-                break;
-            case SYSTEM_LOOKUP:
-                getSystems(root, parameters.getLookupValue());
-                break;
+            case BROWSE_BY_SYSTEM -> addNodesGroupedByName(root, this::addSystemsPage);
+            case BROWSE_BY_FACTIONS -> addNodesGroupedByName(root, this::addFactionsPage);
+            case FACTION_LOOKUP -> getSystemsByFactions(root, parameters.getLookupValue());
+            case SYSTEM_LOOKUP -> getSystems(root, parameters.getLookupValue());
         }
         return root;
     }
@@ -250,16 +241,9 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
         String filterString = queryFilters.stream().map(NameValuePair::toString).collect(Collectors.joining(", "));
         filterString = filterString.isBlank() ? "All" : filterString;
         switch (parameters.getBrowsingMode()) {
-            case BROWSE_BY_SYSTEM:
-                sourceName.append("By Systems - ").append(filterString);
-                break;
-            case BROWSE_BY_FACTIONS:
-                sourceName.append("By Factions - ").append(filterString);
-                break;
-            case FACTION_LOOKUP:
-            case SYSTEM_LOOKUP:
-                sourceName.append(parameters.getLookupValue());
-                break;
+            case BROWSE_BY_SYSTEM -> sourceName.append("By Systems - ").append(filterString);
+            case BROWSE_BY_FACTIONS -> sourceName.append("By Factions - ").append(filterString);
+            case FACTION_LOOKUP, SYSTEM_LOOKUP -> sourceName.append(parameters.getLookupValue());
         }
         return sourceName.toString();
     }
@@ -431,7 +415,7 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
                 },
                 event -> {
                     EBGSFactionsPageV5 t = (EBGSFactionsPageV5) event.getSource().getValue();
-                    Map<String, EBGSFactionsV5> m = t.getDocs().stream().collect(Collectors.toMap(o -> o.getId(), (o -> o)));
+                    Map<String, EBGSFactionsV5> m = t.getDocs().stream().collect(Collectors.toMap(EBGSFactionsV5::getId, (o -> o)));
                     for (EBGSFactionsV5 f : m.values()) {
                         var branch = makeBranch(f.getName(), f.getId(), tree.getValue().getTreeHierarchy());
                         for (var s : f.getFactionPresence()) {
@@ -481,7 +465,8 @@ public class EliteBgsAdapter extends HttpDataAdapter<Double> implements EdbgsApi
 
     @FunctionalInterface
     private interface AddPageDelegate {
-        EBGSPageV5<?> addSinglePage(FilterableTreeItem<SourceBinding> tree, String beginWith, int page, boolean waitForResult) throws DataAdapterException;
+        EBGSPageV5<?> addSinglePage(FilterableTreeItem<SourceBinding> tree, String beginWith, int page, boolean waitForResult)
+                throws DataAdapterException;
     }
 
     static private class InstanceHolder {
