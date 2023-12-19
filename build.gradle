@@ -21,7 +21,7 @@ plugins {
 
 ext.IS_TAG = System.getenv('IS_TAG') != null ? System.getenv('IS_TAG') == "true" : false
 ext.IS_RELEASE = IS_TAG && !(System.getenv('REPO_TAG_NAME').endsWith('-SNAPSHOT'))
-ext.VERSION_STEM = "2.1.0"
+ext.VERSION_STEM = "3.0.0"
 ext.PRODUCT_VERSION = "${VERSION_STEM}${IS_RELEASE ? '' : '-SNAPSHOT'}"
 ext.OS_NAME = System.getProperty("os.name").toLowerCase()
 ext.OS_ARCH = System.getProperty("os.arch")
@@ -29,19 +29,19 @@ ext.IS_64 = OS_ARCH.toLowerCase().contains("64")
 ext.IS_MAC = OS_NAME.contains("mac") || OS_NAME.contains("darwin")
 ext.IS_WINDOWS = OS_NAME.contains("windows")
 ext.IS_LINUX = OS_NAME.contains("linux")
-ext.OPENJFX_VERSION = "16"
+ext.OPENJFX_VERSION = "21"
 ext.OPENJFX_PLATEFORM_CLASSIFIER = IS_MAC ? 'mac' : IS_WINDOWS ? 'win' : IS_LINUX ? 'linux' : 'unsupported'
 
 group 'eu.fthevenet'
 version "${PRODUCT_VERSION}"
 
-sourceCompatibility = 17
-targetCompatibility = 17
+sourceCompatibility = 21
+targetCompatibility = 21
 description 'Elite Dangerous BGS adapter'
 compileJava.options.encoding = 'UTF-8'
 
 dependencies {
-    implementation 'eu.binjr:binjr-core:3.7.0'
+    implementation 'eu.binjr:binjr-core:3.16.0-SNAPSHOT'
     implementation "org.openjfx:javafx-base:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     implementation "org.openjfx:javafx-graphics:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
     implementation "org.openjfx:javafx-controls:$OPENJFX_VERSION:$OPENJFX_PLATEFORM_CLASSIFIER"
@@ -64,10 +64,10 @@ jar {
 
 repositories {
     mavenCentral()
-  //  mavenLocal()
-//    maven{
-//        url "https://oss.sonatype.org/content/repositories/snapshots"
-//    }
+    mavenLocal()
+    maven{
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
 }
 
 

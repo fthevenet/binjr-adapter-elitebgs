@@ -16,7 +16,9 @@
 
 package eu.fthevenet.binjr.sources.adapters.elitebgs.api;
 
-import org.apache.hc.core5.http.NameValuePair;
+
+
+import eu.binjr.core.data.adapters.NameValuePair;
 
 import java.time.Instant;
 import java.util.*;
